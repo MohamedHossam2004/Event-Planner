@@ -27,6 +27,3 @@ go.work.sum
 
 # tls keys
 tls/
-
-# Dockerfile
-broker-service.Dockerfile

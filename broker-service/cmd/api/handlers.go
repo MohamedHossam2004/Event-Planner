@@ -10,5 +10,5 @@ func (app *application) Broker(w http.ResponseWriter, r *http.Request) {
 		Message: "Broker",
 	}
 
-	_ = app.writeJSON(w, http.StatusOK, payload)
+	_ = app.writeJSON(w, http.StatusOK, payload, nil)
 }

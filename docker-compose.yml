@@ -9,6 +9,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+    env_file:
+      - .env
 
   authentication-service:
     build:

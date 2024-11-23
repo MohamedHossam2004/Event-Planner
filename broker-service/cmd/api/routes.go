@@ -28,7 +28,10 @@ func (app *application) routes() http.Handler {
 	mux.Use(middleware.Heartbeat("/ping"))
 	mux.Use(middleware.Throttle(100))
 
-	mux.Get("/", app.Broker)
+	mux.Post("/", app.Broker)
+	mux.Post("/v1/login", app.loginHandler)
+	mux.Post("/v1/register", app.registerHandler)
+	mux.Post("/v1/verify", app.verifyTokenHandler)
 
 	return mux
 }

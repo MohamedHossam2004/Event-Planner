@@ -1,0 +1,37 @@
+{{define "subject"}}Activate your GIU Event Hub account{{end}}
+
+{{define "plainBody"}}
+Hi,
+
+Pleas send a `PUT /v1/users/activated` request with the following JSON body to activate your account:
+
+{"token": "{{.ActivationToken}}"}
+
+Please note that this is a one-time use token and will expire in 3 days.
+
+Thanks,
+
+The GIU Event Hub Team
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http.equiv="Content-Type" content="text/html"; charset="UTF-8" />
+</head>
+
+<body>
+    <p>Hi, </p>
+    <p>Please send a request to the <code>PUT /v1/users/activated</code> endpoint with the following JSON body to activate your account:</p>
+    <pre><code>
+    {"token" : "{{.activationToken}}"}
+    </code></pre>
+    <p>Please note that this is a one-time use token and will expire in 3 days.</p>
+    <p>Thanks,</p>
+    <p>The GIU Event Hub Team</p>
+</body>
+
+</html>
+{{end}}

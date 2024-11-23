@@ -5,10 +5,6 @@ import (
 )
 
 func (app *application) Broker(w http.ResponseWriter, r *http.Request) {
-	payload := jsonResponse{
-		Error:   false,
-		Message: "Broker",
-	}
 
-	_ = app.writeJSON(w, http.StatusOK, payload, nil)
+	_ = app.writeJSON(w, http.StatusOK, envelope{"Broker": "Welcome to broker"}, nil)
 }

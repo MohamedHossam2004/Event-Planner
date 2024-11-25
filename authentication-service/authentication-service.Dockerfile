@@ -6,7 +6,7 @@ COPY . /app
 
 WORKDIR /app
 
-RUN CGO_ENABLED=0 go build -o authApp ./cmd/api
+RUN set GOOS=linux&& set GOARCH=amd64&& set CGO_ENABLED=0 && go build -o authApp ./cmd/api
 
 RUN chmod  +x /app/authApp
 
@@ -14,6 +14,6 @@ FROM alpine:latest
 
 RUN mkdir /app
 
-COPY authApp /app
+COPY --from=builder /app/authApp /app
 
 CMD [ "/app/authApp" ]

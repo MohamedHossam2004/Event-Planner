@@ -10,8 +10,13 @@ type Models struct {
 	EventApps EventAppModel
 }
 func NewModels(db *mongo.Database) Models {
+	eventModel := EventModel{collection: db.Collection("events")}
+	
 	return Models{
-		Event: EventModel{collection: db.Collection("events")},
-		EventApps: EventAppModel{collection: db.Collection("event_apps")},
+		Event:     eventModel,
+		EventApps: EventAppModel{
+			collection:   db.Collection("event_apps"),
+			eventService: &eventModel,
+		},
 	}
 }

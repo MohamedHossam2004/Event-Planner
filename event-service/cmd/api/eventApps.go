@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/MohamedHossam2004/Event-Planner/event-service/internal/data"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -16,7 +17,7 @@ func (app *application) createEventAppHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = app.EventApp.CreateEventApp(context.Background(), &eventApp)
+	err = app.models.EventApps.CreateEventApp(context.Background(), &eventApp)
 	if err != nil {
 		app.Logger.Printf("Error creating event app: %v\n", err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to create event app"}, nil)
@@ -27,7 +28,7 @@ func (app *application) createEventAppHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) getAllEventAppsHandler(w http.ResponseWriter, r *http.Request) {
-	eventApps, err := app.EventApp.ListEventApps(context.Background(), nil, nil)
+	eventApps, err := app.models.EventApps.ListEventApps(context.Background(), nil, nil)
 	if err != nil {
 		app.Logger.Printf("Error listing event apps: %v\n", err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to list event apps"}, nil)
@@ -38,16 +39,16 @@ func (app *application) getAllEventAppsHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (app *application) getEventAppByIDHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	objID, err := primitive.ObjectIDFromHex(id)
+	idStr := chi.URLParam(r, "id")
+	objID, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID"}, nil)
 		return
 	}
 
-	eventApp, err := app.EventApp.GetEventApp(context.Background(), objID)
+	eventApp, err := app.models.EventApps.GetEventApp(context.Background(), objID)
 	if err != nil {
-		app.Logger.Printf("Error fetching event app with ID %s: %v\n", id, err)
+		app.Logger.Printf("Error fetching event app with ID %s: %v\n", idStr, err)
 		app.writeJSON(w, http.StatusNotFound, envelope{"error": "Event app not found"}, nil)
 		return
 	}
@@ -56,8 +57,8 @@ func (app *application) getEventAppByIDHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (app *application) updateEventAppHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	objID, err := primitive.ObjectIDFromHex(id)
+	idStr := chi.URLParam(r, "id")
+	objID, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID"}, nil)
 		return
@@ -70,9 +71,9 @@ func (app *application) updateEventAppHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = app.EventApp.UpdateEventApp(context.Background(), objID, update)
+	err = app.models.EventApps.UpdateEventApp(context.Background(), objID, update)
 	if err != nil {
-		app.Logger.Printf("Error updating event app with ID %s: %v\n", id, err)
+		app.Logger.Printf("Error updating event app with ID %s: %v\n", idStr, err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to update event app"}, nil)
 		return
 	}
@@ -81,16 +82,16 @@ func (app *application) updateEventAppHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) deleteEventAppHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	objID, err := primitive.ObjectIDFromHex(id)
+	idStr := chi.URLParam(r, "id")
+	objID, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID"}, nil)
 		return
 	}
 
-	err = app.EventApp.DeleteEventApp(context.Background(), objID)
+	err = app.models.EventApps.DeleteEventApp(context.Background(), objID)
 	if err != nil {
-		app.Logger.Printf("Error deleting event app with ID %s: %v\n", id, err)
+		app.Logger.Printf("Error deleting event app with ID %s: %v\n", idStr, err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to delete event app"}, nil)
 		return
 	}

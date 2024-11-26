@@ -28,8 +28,6 @@ type config struct {
 type application struct {
 	config config
 	Logger *log.Logger
-	Event *data.EventModel
-	EventApp *data.EventAppModel
 	models data.Models
 }
 

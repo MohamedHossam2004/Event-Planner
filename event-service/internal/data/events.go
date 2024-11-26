@@ -93,7 +93,7 @@ func NewEventService(db *mongo.Database, collectionName string) *EventModel {
 }
 
 // CreateEvent adds a new event to the database
-func (es *EventModel) CreateEvent(event *Event) (*Event, error) {
+func (es EventModel) CreateEvent(event *Event) (*Event, error) {
 	event.ID = primitive.NewObjectID()
 	event.CreatedAt = time.Now()
 	event.UpdatedAt = time.Now()
@@ -105,7 +105,7 @@ func (es *EventModel) CreateEvent(event *Event) (*Event, error) {
 	return event, nil
 }
 // GetEventByID retrieves an event by its ID
-func (es *EventModel) GetEventByID(id primitive.ObjectID) (*Event, error) {
+func (es EventModel) GetEventByID(id primitive.ObjectID) (*Event, error) {
 	var event Event
 	filter := bson.D{{Key: "_id", Value: id}}
 
@@ -121,7 +121,7 @@ func (es *EventModel) GetEventByID(id primitive.ObjectID) (*Event, error) {
 }
 
 // UpdateEvent updates an existing event
-func (es *EventModel) UpdateEvent(id primitive.ObjectID, event *Event) (*Event, error) {
+func (es EventModel) UpdateEvent(id primitive.ObjectID, event *Event) (*Event, error) {
 	event.UpdatedAt = time.Now()
 	filter := bson.D{{Key: "_id", Value: id}}
 
@@ -138,14 +138,14 @@ func (es *EventModel) UpdateEvent(id primitive.ObjectID, event *Event) (*Event, 
 }
 
 // DeleteEvent removes an event from the database
-func (es *EventModel) DeleteEvent(id primitive.ObjectID) error {
+func (es EventModel) DeleteEvent(id primitive.ObjectID) error {
 	filter := bson.D{{Key: "_id", Value: id}}
 
 	_, err := es.collection.DeleteOne(context.Background(), filter)
 	return err
 }
 // GetAllEvents retrieves all events
-func (es *EventModel) GetAllEvents() ([]Event, error) {
+func (es EventModel) GetAllEvents() ([]Event, error) {
 	var events []Event
 	cursor, err := es.collection.Find(context.Background(), bson.D{})
 	if err != nil {

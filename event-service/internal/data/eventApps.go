@@ -1,7 +1,7 @@
 package data
 
 import (
-
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,22 +10,48 @@ import (
 )
 
 type EventApps struct {
-	EventID     primitive.ObjectID `bson:"event_id" json:"event_id"`
-	Attendee []string              `bson:"attendee" json:"attendee"`
-}
-type EventAppModel struct {
-	collection *mongo.Collection
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	EventID   primitive.ObjectID `bson:"event_id" json:"event_id" validate:"required"`
+	Attendee  []string          `bson:"attendee" json:"attendee" validate:"required"`
 }
 
-func NewEventAppModel(db *mongo.Database, collectionName string) *EventAppModel {
+type EventAppModel struct {
+	collection   *mongo.Collection
+	eventService *EventModel
+}
+
+func NewEventAppModel(db *mongo.Database, collectionName string, eventService *EventModel) *EventAppModel {
 	return &EventAppModel{
-		collection: db.Collection(collectionName),
+		collection:   db.Collection(collectionName),
+		eventService: eventService,
 	}
 }
 
 func (s *EventAppModel) CreateEventApp(ctx context.Context, eventApp *EventApps) error {
-	eventApp.EventID = primitive.NewObjectID()
-	_, err := s.collection.InsertOne(ctx, eventApp)
+	// Verify that the event exists
+	event, err := s.eventService.GetEventByID(eventApp.EventID)
+	if err != nil {
+		return err
+	}
+	if event == nil {
+		return fmt.Errorf("event with ID %s does not exist", eventApp.EventID.Hex())
+	}
+
+	eventApp.ID = primitive.NewObjectID()
+	
+	// Insert the event application
+	_, err = s.collection.InsertOne(ctx, eventApp)
+	if err != nil {
+		return err
+	}
+
+	// Update the number_of_applications in the Event document
+	update := bson.M{"$inc": bson.M{"number_of_applications": 1}}
+	_, err = s.eventService.collection.UpdateOne(
+		ctx,
+		bson.M{"_id": eventApp.EventID},
+		update,
+	)
 	return err
 }
 

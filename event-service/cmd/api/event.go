@@ -4,13 +4,14 @@ import (
 	"net/http"
 
 	"github.com/MohamedHossam2004/Event-Planner/event-service/internal/data"
+	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (app *application) getAllEventsHandler(w http.ResponseWriter, r *http.Request) {
 	app.Logger.Println("GetAllEvents called")
 
-	events, err := app.Event.GetAllEvents()
+	events, err := app.models.Event.GetAllEvents()
 	if err != nil {
 		app.Logger.Printf("Error fetching events: %v", err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to fetch events"}, nil)
@@ -21,14 +22,16 @@ func (app *application) getAllEventsHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *application) getEventByIDHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := primitive.ObjectIDFromHex(r.URL.Query().Get("id"))
+	idStr := chi.URLParam(r, "id")
+
+	id, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.Logger.Printf("Invalid ID format: %v", err)
 		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID format"}, nil)
 		return
 	}
 
-	event, err := app.Event.GetEventByID(id)
+	event, err := app.models.Event.GetEventByID(id)
 	if err != nil {
 		app.Logger.Printf("Error fetching event by ID: %v", err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to fetch event"}, nil)
@@ -53,7 +56,7 @@ func (app *application) createEventHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	createdEvent, err := app.Event.CreateEvent(&event)
+	createdEvent, err := app.models.Event.CreateEvent(&event)
 	if err != nil {
 		app.Logger.Printf("Error creating event: %v", err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to create event"}, nil)
@@ -66,8 +69,8 @@ func (app *application) createEventHandler(w http.ResponseWriter, r *http.Reques
 func (app *application) updateEventHandler(w http.ResponseWriter, r *http.Request) {
 	app.Logger.Println("UpdateEvent called")
 
-	idParam := r.URL.Query().Get("id")
-	id, err := primitive.ObjectIDFromHex(idParam)
+	idStr := chi.URLParam(r, "id")
+	id, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.Logger.Printf("Invalid ID format: %v", err)
 		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID format"}, nil)
@@ -81,7 +84,7 @@ func (app *application) updateEventHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	updatedEvent, err := app.Event.UpdateEvent(id, &event)
+	updatedEvent, err := app.models.Event.UpdateEvent(id, &event)
 	if err != nil {
 		app.Logger.Printf("Error updating event: %v", err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to update event"}, nil)
@@ -93,15 +96,16 @@ func (app *application) updateEventHandler(w http.ResponseWriter, r *http.Reques
 
 func (app *application) deleteEventHandler(w http.ResponseWriter, r *http.Request) {
 	app.Logger.Println("DeleteEvent called")
+	idStr := chi.URLParam(r, "id")
 
-	id, err := primitive.ObjectIDFromHex(r.URL.Query().Get("id"))
+	id, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.Logger.Printf("Invalid ID format: %v", err)
 		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID format"}, nil)
 		return
 	}
 
-	err = app.Event.DeleteEvent(id)
+	err = app.models.Event.DeleteEvent(id)
 	if err != nil {
 		app.Logger.Printf("Error deleting event: %v", err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to delete event"}, nil)

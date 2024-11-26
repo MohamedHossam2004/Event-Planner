@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/MohamedHossam2004/Event-Planner/user-service/internal/validator"
+	"github.com/jackc/pgconn"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -107,12 +108,11 @@ func (m UserModel) Insert(user *User) error {
 
 	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
 	if err != nil {
-		switch {
-		case err.Error() == `ERROR: duplicate key value violates unique constraint "users_email_key"`:
+
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
 			return ErrDuplicateEmail
-		default:
-			return err
 		}
+		return err
 	}
 	return nil
 }

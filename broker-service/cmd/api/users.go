@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 )
@@ -36,28 +35,7 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch response.StatusCode {
-	case http.StatusCreated:
-		err = app.writeJSON(w, http.StatusCreated, payload, nil)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-		}
-	case http.StatusBadRequest:
-		errMessage, ok := payload["error"].(string)
-		if !ok {
-			errMessage = "Invalid request"
-		}
-		app.badRequestResponse(w, r, fmt.Errorf(errMessage))
-	case http.StatusUnprocessableEntity:
-		errors, ok := payload["error"].(map[string]string)
-		if !ok {
-			app.serverErrorResponse(w, r, fmt.Errorf("invalid error format"))
-			return
-		}
-		app.failedValidationResponse(w, r, errors)
-	default:
-		app.serverErrorResponse(w, r, fmt.Errorf("unexpected status code %d from authentication service", response.StatusCode))
-	}
+	app.handleResponseStatus(w, r, response.StatusCode, payload)
 }
 
 func (app *application) registerHandler(w http.ResponseWriter, r *http.Request) {
@@ -89,28 +67,7 @@ func (app *application) registerHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	switch response.StatusCode {
-	case http.StatusCreated:
-		err = app.writeJSON(w, http.StatusCreated, payload, nil)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-		}
-	case http.StatusBadRequest:
-		errMessage, ok := payload["error"].(string)
-		if !ok {
-			errMessage = "Invalid request"
-		}
-		app.badRequestResponse(w, r, fmt.Errorf(errMessage))
-	case http.StatusUnprocessableEntity:
-		errors, ok := payload["error"].(map[string]string)
-		if !ok {
-			app.serverErrorResponse(w, r, fmt.Errorf("invalid error format"))
-			return
-		}
-		app.failedValidationResponse(w, r, errors)
-	default:
-		app.serverErrorResponse(w, r, fmt.Errorf("unexpected status code %d from authentication service", response.StatusCode))
-	}
+	app.handleResponseStatus(w, r, response.StatusCode, payload)
 }
 
 func (app *application) verifyTokenHandler(w http.ResponseWriter, r *http.Request) {
@@ -142,26 +99,5 @@ func (app *application) verifyTokenHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	switch response.StatusCode {
-	case http.StatusAccepted:
-		err = app.writeJSON(w, http.StatusAccepted, payload, nil)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-		}
-	case http.StatusBadRequest:
-		errMessage, ok := payload["error"].(string)
-		if !ok {
-			errMessage = "Invalid request"
-		}
-		app.badRequestResponse(w, r, fmt.Errorf(errMessage))
-	case http.StatusUnprocessableEntity:
-		errors, ok := payload["error"].(map[string]string)
-		if !ok {
-			app.serverErrorResponse(w, r, fmt.Errorf("invalid error format"))
-			return
-		}
-		app.failedValidationResponse(w, r, errors)
-	default:
-		app.serverErrorResponse(w, r, fmt.Errorf("unexpected status code %d from authentication service", response.StatusCode))
-	}
+	app.handleResponseStatus(w, r, response.StatusCode, payload)
 }

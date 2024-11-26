@@ -1,0 +1,2 @@
+authentication-service/authentication-service.Dockerfile filter=lfs diff=lfs merge=lfs -text
+broker-service/broker-service.Dockerfile filter=lfs diff=lfs merge=lfs -text

@@ -81,6 +81,43 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 	return nil
 }
 
+func (app *application) handleResponseStatus(w http.ResponseWriter, r *http.Request, statusCode int, payload map[string]any) {
+	switch statusCode {
+	case http.StatusCreated, http.StatusAccepted:
+		err := app.writeJSON(w, statusCode, payload, nil)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+		}
+	case http.StatusBadRequest:
+		errMessage, ok := payload["error"].(string)
+		if !ok {
+			errMessage = "Invalid request"
+		}
+		app.badRequestResponse(w, r, fmt.Errorf(errMessage))
+	case http.StatusUnprocessableEntity:
+		errors, ok := payload["error"].(map[string]any)
+		if !ok {
+			app.serverErrorResponse(w, r, fmt.Errorf("invalid error format"))
+			return
+		}
+		validationErrors := make(map[string]string)
+		for key, value := range errors {
+			if strVal, ok := value.(string); ok {
+				validationErrors[key] = strVal
+			}
+		}
+		app.failedValidationResponse(w, r, validationErrors)
+	case http.StatusConflict:
+		app.editConflictResponse(w, r)
+	case http.StatusUnauthorized:
+		app.invalidCredentialsResponse(w, r)
+	case http.StatusForbidden:
+		app.inactiveAccountResponse(w, r)
+	default:
+		app.serverErrorResponse(w, r, fmt.Errorf("unexpected status code %d from authentication service", statusCode))
+	}
+}
+
 func (app *application) background(fn func()) {
 	go func() {
 		defer func() {

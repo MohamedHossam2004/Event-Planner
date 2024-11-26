@@ -27,3 +27,6 @@ go.work.sum
 
 # tls keys
 tls/
+
+# vscode
+.vscode/

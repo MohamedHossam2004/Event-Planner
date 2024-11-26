@@ -1,3 +1,5 @@
-Makefile
 db-data/
 .env
+
+.idea/*
+.vscode/*

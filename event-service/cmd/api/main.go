@@ -18,6 +18,7 @@ var db *mongo.Database
 const (
 	webPort = "80"
 	webEnv  = "development"
+	mongoURL = "mongodb://mongo:27017"
 )
 
 type config struct {
@@ -37,7 +38,11 @@ func main() {
 	cfg.env = webEnv
 
 	// Connect to the MongoDB database
-	Connect()
+	mongoClient, err := connectToMongo()
+	if err != nil {
+		log.Panic(err)
+	}
+	db = mongoClient.Database("events")
 	if db == nil {
 		log.Panic("could not connect to database")
 	}
@@ -54,7 +59,7 @@ func main() {
 	}
 
 	// Log the server start
-	log.Printf("starting user service on %s\n", cfg.port)
+	log.Printf("starting events service on %s\n", cfg.port)
 
 	// Set up HTTP server
 	srv := &http.Server{
@@ -67,7 +72,7 @@ func main() {
 
 	// Start the server and log any errors
 	logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	log.Fatal(err)
 }
 
@@ -77,7 +82,7 @@ func Connect() {
 	defer cancel()
 
 	// Connect to MongoDB (adjust URI if needed)
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURL))
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
@@ -85,6 +90,26 @@ func Connect() {
 	// Access the Event-service database
 	db = client.Database("Event-service")
 	log.Println("Connected to MongoDB, using database Event-service")
+}
+
+func connectToMongo() (*mongo.Client, error) {
+	// create connection options
+	clientOptions := options.Client().ApplyURI(mongoURL)
+	clientOptions.SetAuth(options.Credential{
+		Username: "admin",
+		Password: "password",
+	})
+
+	// connect
+	c, err := mongo.Connect(context.TODO(), clientOptions)
+	if err != nil {
+		log.Println("Error connecting:", err)
+		return nil, err
+	}
+
+	log.Println("Connected to mongo!")
+
+	return c, nil
 }
 
 // GetCollection returns a specific collection

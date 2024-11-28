@@ -4,9 +4,13 @@ import(
 	"net/http"
 	"context"
 	"log"
-	//"github.com/go-chi/chi/v5"
+	 
+	"github.com/go-chi/chi/v5"
+
 	//"github.com/go-chi/chi/v5/middleware"
+
 	"go.mongodb.org/mongo-driver/mongo"
+
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -18,8 +22,9 @@ var (
 
 
 
-type email struct{
-	email string `bson:"email"`
+type EmailStruct struct {
+	Email string `bson:"email"`
+	
 }
 
 
@@ -44,22 +49,49 @@ func connectToDb(){
 }
 
 
-func subscribe(w http.ResponseWriter, r *http.Request){
+func subscribeGeneral(w http.ResponseWriter, r *http.Request) {
+	userEmail := r.Header.Get("Email")
+	email := EmailStruct{Email: userEmail}
+
+	checkEmail := generalMailingList.FindOne(context.Background(), email)
+
 	
-	
-	
+	if checkEmail == nil {
+		log.Println("Email not found in mailing list")
+		_, err := generalMailingList.InsertOne(context.Background(), email)
+		if err != nil {
+			log.Fatal("Error inserting document: ", err)
+			http.Error(w, "Failed to subscribe", http.StatusInternalServerError)
+			return
+		}
+
+		log.Println("Email inserted successfully!")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Email successfully subscribed!"))
+	} else {
+		
+		log.Println("Email already subscribed")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Email already subscribed"))
+	}
 }
 
-func main(){
-	//r:=chi.NewRouter()
-	connectToDb()
-	// notification := Notification{ID: 10}
-	// _, err := userCollection.InsertOne(context.Background(), notification)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// log.Println("Notification inserted successfully!")
 
+
+
+
+func main(){
+	r:=chi.NewRouter()
+	connectToDb()
+
+
+	r.Route("/subscribe", func(r chi.Router) {
+		// Add a POST handler for /subscribe/general
+		r.Post("/general", subscribeGeneral)
+	})
+	
+	
+	http.ListenAndServe(":8080", r)
 }
 
 

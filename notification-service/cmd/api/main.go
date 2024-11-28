@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 package main
 
 import(
@@ -64,3 +65,6 @@ func main(){
 
 
 
+=======
+// hello
+>>>>>>> bc4f1eb56284d179cfd660f28b21ebd7505940d1

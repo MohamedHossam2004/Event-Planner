@@ -23,7 +23,7 @@ func (h *application) routes() http.Handler {
 	}))
 
 	// Routes
-	r.Route("/events", func(r chi.Router) {
+	r.Route("/v1/events", func(r chi.Router) {
 		r.Get("/", h.getAllEventsHandler)       // GET /events
 		r.Get("/{id}", h.getEventByIDHandler)   // GET /events/{id}
 		r.Post("/", h.createEventHandler)       // POST /events
@@ -31,7 +31,7 @@ func (h *application) routes() http.Handler {
 		r.Delete("/{id}", h.deleteEventHandler) // DELETE /events/{id}
 	})
 
-	r.Route("/eventApps", func(r chi.Router) {
+	r.Route("/v1/eventApps", func(r chi.Router) {
 		r.Get("/", h.getAllEventAppsHandler)        // GET /eventApps
 		r.Get("/{id}", h.getEventAppByIDHandler)    // GET /eventApps/{id}
 		r.Post("/", h.createEventAppHandler)        // POST /eventApps

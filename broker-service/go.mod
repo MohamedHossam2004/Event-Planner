@@ -7,4 +7,7 @@ require (
 	github.com/go-chi/cors v1.2.1
 )
 
-require github.com/pascaldekloe/jwt v1.12.0 // indirect
+require (
+	github.com/pascaldekloe/jwt v1.12.0 // indirect
+	go.mongodb.org/mongo-driver v1.17.1 // indirect
+)

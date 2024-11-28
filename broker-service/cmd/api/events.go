@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"errors"
+
 	"github.com/go-chi/chi/v5"
 )
 

@@ -10,6 +10,7 @@ import (
 	// "github.com/go-chi/chi/v5/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -19,9 +20,7 @@ var (
 	eventMailingList   *mongo.Collection
 )
 
-type EmailStruct struct {
-	email string `bson:"email"`
-}
+
 
 func connectToDb() {
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27018")
@@ -44,28 +43,46 @@ func connectToDb() {
 
 func subscribeGeneral(w http.ResponseWriter, r *http.Request) {
 	userEmail := r.Header.Get("Email")
-	email := EmailStruct{email: userEmail}
-	var result EmailStruct
-	checkEmail := generalMailingList.FindOne(context.Background(), email).Decode(&result)
 
-	if checkEmail == mongo.ErrNoDocuments {
-		log.Println("Email not found in mailing list")
-		_, err := generalMailingList.InsertOne(context.Background(), email)
-		if err != nil {
-			log.Fatal("Error inserting document: ", err)
-			http.Error(w, "Failed to subscribe", http.StatusInternalServerError)
-			return
-		}
+	var result bson.M
+	err := generalMailingList.FindOne(context.Background(), bson.M{"email": userEmail}).Decode(&result)
 
-		log.Println("Email inserted successfully!")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Email successfully subscribed!"))
+	if err == mongo.ErrNoDocuments {
+		_, insertErr := generalMailingList.InsertOne(context.Background(), bson.M{"email": userEmail})
+			if insertErr != nil {
+				log.Println("Error inserting document: ", insertErr)
+				http.Error(w, "Failed to subscribe", http.StatusInternalServerError)
+				return
+			}
+	
+			log.Println("Email inserted successfully!")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Email successfully subscribed!"))
 	} else {
-
 		log.Println("Email already subscribed")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Email already subscribed"))
 	}
+
+	
+}
+
+func subscribeEvent(w http.ResponseWriter, r *http.Request) {
+	userEmail := r.Header.Get("Email")
+	eventID := chi.URLParam(r, "id")
+
+	_, err := eventMailingList.UpdateOne(context.Background(), bson.M{"event_id": eventID}, bson.M{"$addToSet": bson.M{"emails": userEmail}},options.Update().SetUpsert(true))
+
+	if err != nil {
+		log.Fatal("Error updating event: ", err)
+		http.Error(w, "Failed to subscribe", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("Email successfully subscribed to event!")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Email successfully subscribed to event!"))
+
 }
 
 func unsubscribe(w http.ResponseWriter, r *http.Request) {
@@ -76,9 +93,8 @@ func unsubscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email := EmailStruct{email: userEmail}
 
-	res, err := generalMailingList.DeleteOne(context.Background(), email)
+	res, err := generalMailingList.DeleteOne(context.Background(), bson.M{"email": userEmail})
 
 	if err != nil {
 		log.Fatal(err)
@@ -99,8 +115,9 @@ func main() {
 	connectToDb()
 
 	r.Route("/subscribe", func(r chi.Router) {
-		// Add a POST handler for /subscribe/general
+		
 		r.Post("/general", subscribeGeneral)
+		r.Post("/event/{id}", subscribeEvent)
 	})
 
 	r.Post("/unsubscribe", unsubscribe)

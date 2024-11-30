@@ -33,17 +33,24 @@ func (app *application) routes() http.Handler {
 	mux.Post("/v1/register", app.registerHandler)
 	mux.Post("/v1/verify", app.verifyTokenHandler)
 
+	mux.Group(func(r chi.Router) {
+		r.Use(app.requireUser)
+		r.Post("/v1/eventApps", app.createEventAppHandler)
+		r.Put("/v1/eventApps/{id}", app.updateEventAppHandler)
+		r.Delete("/v1/eventApps/{id}", app.deleteEventAppHandler)
+	})
+
 	mux.Get("/v1/events", app.getAllEventsHandler)
 	mux.Get("/v1/events/{id}", app.getEventByIDHandler)
-	mux.Post("/v1/events", app.createEventHandler)
-	mux.Put("/v1/events/{id}", app.updateEventHandler)
-	mux.Delete("/v1/events/{id}", app.deleteEventHandler)
 
-	mux.Get("/v1/eventApps", app.getAllEventAppsHandler)
-	mux.Get("/v1/eventApps/{id}", app.getEventAppByIDHandler)
-	mux.Post("/v1/eventApps", app.createEventAppHandler)
-	mux.Put("/v1/eventApps/{id}", app.updateEventAppHandler)
-	mux.Delete("/v1/eventApps/{id}", app.deleteEventAppHandler)
+	mux.Group(func(r chi.Router) {
+		r.Use(app.requireAdmin)
+		r.Post("/v1/events", app.createEventHandler)
+		r.Put("/v1/events/{id}", app.updateEventHandler)
+		r.Delete("/v1/events/{id}", app.deleteEventHandler)
+		r.Get("/v1/eventApps", app.getAllEventAppsHandler)
+		r.Get("/v1/eventApps/{id}", app.getEventAppByIDHandler)
+	})
 
 	return mux
 }

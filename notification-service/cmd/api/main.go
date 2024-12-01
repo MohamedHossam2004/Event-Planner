@@ -37,14 +37,16 @@ type config struct {
 		sender   string
 	}
 }
-
-type application struct {
-	config config
-	logger *log.Logger
-	mailer mailer.Mailer
+type payload struct{
+	Topic string `json:"topic"`
+	Data map[string]any `json:"data"`
 }
 
-
+type application struct {
+	Config config
+	Logger *log.Logger
+	Mailer mailer.Mailer
+}
 
 func connectToDb() {
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27018")
@@ -62,7 +64,6 @@ func connectToDb() {
 	generalMailingList = mongoClient.Database("Notification-Service").Collection("generalMailingList")
 	eventMailingList = mongoClient.Database("Notification-Service").Collection("eventMailingList")
 	log.Println("Connected to MongoDB!")
-
 }
 
 func (app * application) subscribeGeneral(w http.ResponseWriter, r *http.Request) {
@@ -83,9 +84,9 @@ func (app * application) subscribeGeneral(w http.ResponseWriter, r *http.Request
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("Email successfully subscribed!"))
 			app.background(func() {
-				err := app.mailer.Send(userEmail,"SubscribeTemplate.tmpl",nil)
+				err := app.Mailer.Send(userEmail,"SubscribeTemplate.tmpl",nil)
 				if err !=nil{
-					app.logger.Println(err)
+					app.Logger.Println(err)
 
 				}
 			})
@@ -97,9 +98,7 @@ func (app * application) subscribeGeneral(w http.ResponseWriter, r *http.Request
 		log.Println("Email already subscribed")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Email already subscribed"))
-	}
-
-	
+	}	
 }
 
 func subscribeEvent(w http.ResponseWriter, r *http.Request) {
@@ -117,10 +116,9 @@ func subscribeEvent(w http.ResponseWriter, r *http.Request) {
 	log.Println("Email successfully subscribed to event!")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Email successfully subscribed to event!"))
-
 }
 
-func (app * application) unsubscribe(w http.ResponseWriter, r *http.Request) {
+func (app * application) unsubscribeGeneral(w http.ResponseWriter, r *http.Request) {
 	userEmail := r.Header.Get("Email")
 
 	if userEmail == "" {
@@ -152,6 +150,71 @@ func (app * application) unsubscribe(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (app * application) notify(w http.ResponseWriter, r *http.Request){
+	var Payload payload
+	err:=app.readJSON(w,r,&Payload)
+
+	if err !=nil{
+		app.serverErrorResponse(w,r,err)
+		return
+	}
+
+	topic:=Payload.Topic
+
+	// if err == nil{
+	// 	return
+	// }
+	switch topic {
+    case "event_add":
+        app.eventAdd(Payload)
+	case "event_remove":
+        app.eventRemove(Payload)
+	case "event_update":
+        app.eventUpdate(Payload)
+    default:
+       return
+    }
+
+
+}
+
+func (app * application) eventAdd(Payload payload){
+
+}
+func (app * application) eventRemove(Payload payload){
+emails, ok := Payload.Data["emails"].([]string)
+	if !ok {
+		// Handle the case where the assertion fails
+		return
+	}
+eventName, ok := Payload.Data["event_name"].(string)
+	if !ok {
+		return
+	}
+eventDate, ok := Payload.Data["date"].(string)
+	if !ok {
+		return
+	}
+
+app.background(func() {
+		err := app.Mailer.Send(emails,"SubscribeTemplate.tmpl",nil)
+		if err !=nil{
+			app.Logger.Println(err)
+
+		}
+})
+	
+	
+	
+
+
+
+
+
+}
+
+
+
 func main() {
 	var cfg config
 	cfg.port = webPort
@@ -174,9 +237,9 @@ func main() {
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.LUTC)
 	app := &application{
-		config: cfg,
-		logger: logger,
-		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
+		Config: cfg,
+		Logger: logger,
+		Mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
 	log.Printf("starting user service on %s\n", cfg.port)
@@ -194,15 +257,13 @@ func main() {
 	r := chi.NewRouter()
 	connectToDb()
 
-	r.Route("/subscribe", func(r chi.Router) {
+	
 		
-		r.Post("/general", app.subscribeGeneral)
-		r.Post("/event/{id}", subscribeEvent)
-	})
+	r.Post("/subscribe", app.subscribeGeneral)
+	r.Post("/unsubscribe", app.unsubscribeGeneral)
+	r.Post("/notify",app.notify)
 
-	r.Post("/unsubscribe", app.unsubscribe)
-
-	err=http.ListenAndServe(app.config.port, r)
+	err=http.ListenAndServe(app.Config.port, r)
 
 	log.Fatal(err)
 }

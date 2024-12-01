@@ -52,7 +52,7 @@ func (m *Mailer) Send(recipient, templateFile string, data any) error {
 	}
 
 	msg := mail.NewMessage()
-	msg.SetHeader("To", recipient)
+	msg.SetHeader("To",recipient)
 	msg.SetHeader("From", m.sender)
 	msg.SetHeader("Subject", subject.String())
 	msg.SetBody("text/plain", plainBody.String())

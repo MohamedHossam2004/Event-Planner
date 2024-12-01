@@ -1,0 +1,36 @@
+{{define "subject"}}Announcement Update for Event: {{.Name}} on {{.Date}}{{end}}
+
+{{define "plainBody"}}
+Hi,
+
+We have an important update regarding the event "{{.Name}}" scheduled for {{.Date}}. 
+
+Here is the update:
+{{.Description}}
+
+We hope to see you at the event, and stay tuned for any further updates!
+
+Best regards,
+The GIU Event Hub Team
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http.equiv="Content-Type" content="text/html"; charset="UTF-8" />
+</head>
+
+<body>
+    <p>Hi,</p>
+    <p>We have an important update regarding the event <strong>{{.Name}}</strong> scheduled for <strong>{{.Date}}</strong>.</p>
+    <p>Here is the update:</p>
+    <p><strong>{{.Description}}</strong></p>
+    <p>We hope to see you at the event, and stay tuned for any further updates!</p>
+    <p>Best regards,</p>
+    <p>The GIU Event Hub Team</p>
+</body>
+
+</html>
+{{end}}

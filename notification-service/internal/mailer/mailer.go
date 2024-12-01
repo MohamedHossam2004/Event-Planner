@@ -27,7 +27,7 @@ func New(host string, port int, username, password, sender string) Mailer {
 	}
 }
 
-func (m *Mailer) Send(recipient, templateFile string, data any) error {
+func (m *Mailer) Send(recipient []string, templateFile string, data any) error {
 	tmpl, err := template.New("email").ParseFS(templateFS, "templates/"+templateFile)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func (m *Mailer) Send(recipient, templateFile string, data any) error {
 	}
 
 	msg := mail.NewMessage()
-	msg.SetHeader("To",recipient)
+	msg.SetHeader("To",recipient...)
 	msg.SetHeader("From", m.sender)
 	msg.SetHeader("Subject", subject.String())
 	msg.SetBody("text/plain", plainBody.String())
@@ -65,3 +65,4 @@ func (m *Mailer) Send(recipient, templateFile string, data any) error {
 
 	return nil
 }
+

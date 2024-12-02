@@ -63,6 +63,7 @@ func connectToDb() {
 		log.Fatal(err)
 	}
 
+	mongoClient.Database("Notification-Service").CreateCollection(context.Background(), "mailingList")
 	mailingList = mongoClient.Database("Notification-Service").Collection("mailingList")
 	log.Println("Connected to MongoDB!")
 }

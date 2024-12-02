@@ -1,10 +1,14 @@
-{{define "subject"}}Welcome to GIU Event Hub!{{end}}
+{{define "subject"}}Welcome to GIU Event Hub - {{if eq .Type "All"}}All Events{{else}}{{.Type}} Events{{end}}!{{end}}
 
 {{define "plainBody"}}
 Hi,
 Thank you for subscribing to GIU Event Hub! We're thrilled to have you on board.
 
+{{if eq .Type "All"}}
 From now on, you'll receive updates about all the exciting events happening on the GIU campus. Stay tuned for event announcements, reminders, and exclusive details straight to your inbox.
+{{else}}
+From now on, you'll receive updates about all the exciting events in the {{.Type}} category happening on the GIU campus. Stay tuned for event announcements, reminders, and exclusive details straight to your inbox.
+{{end}}
 
 We can't wait to see you at our events!
 
@@ -17,15 +21,19 @@ The GIU Event Hub Team
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
-    <meta http.equiv="Content-Type" content="text/html"; charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 
 <body>
-    <p>Hi, </p>
+    <p>Hi,</p>
     <p>Thank you for subscribing to GIU Event Hub! We're thrilled to have you on board.</p>
+    {{if eq .Type "All"}}
     <p>From now on, you'll receive updates about all the exciting events happening on the GIU campus. Stay tuned for event announcements, reminders, and exclusive details straight to your inbox.</p>
+    {{else}}
+    <p>From now on, you'll receive updates about all the exciting events in the <strong>{{.Type}}</strong> category happening on the GIU campus. Stay tuned for event announcements, reminders, and exclusive details straight to your inbox.</p>
+    {{end}}
     <p>We can't wait to see you at our events!</p>
-    <p>Best regards,,</p>
+    <p>Best regards,</p>
     <p>The GIU Event Hub Team</p>
 </body>
 

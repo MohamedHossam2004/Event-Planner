@@ -1,0 +1,65 @@
+{{define "subject"}}You're Invited: {{.Name}} on {{.Date}}!{{end}}
+
+{{define "plainBody"}}
+Hello,
+
+We’re excited to announce a new event: "{{.Name}}"! This is your chance to connect, learn, and be part of something special.
+
+Here are the details:
+📅 Date: {{.Date}}
+📍 Location: {{.Location}}
+
+About the event:
+{{.Description}}
+
+Mark your calendar – we’d love to see you there! Feel free to reach out if you have any questions.
+
+Looking forward to an amazing event together!
+
+Best regards,  
+The GIU Event Hub Team
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html"; charset="UTF-8" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .highlight {
+            color: #2a9d8f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <p>Hello,</p>
+
+    <p>We’re excited to announce a new event: <strong class="highlight">{{.Name}}</strong>! This is your chance to connect, learn, and be part of something special.</p>
+
+    <p>Here are the details:</p>
+    <ul>
+        <li><strong>📅 Date:</strong> {{.Date}}</li>
+        <li><strong>📍 Location:</strong> {{.Location}}</li>
+    </ul>
+
+    <p>About the event:</p>
+    <p><strong class="highlight">{{.Description}}</strong></p>
+
+    <p>Mark your calendar – we’d love to see you there! Feel free to reach out if you have any questions.</p>
+
+    <p>Looking forward to an amazing event together!</p>
+
+    <p>Best regards,</p>
+    <p>The GIU Event Hub Team</p>
+</body>
+
+</html>
+{{end}}

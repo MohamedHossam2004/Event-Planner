@@ -1,13 +1,20 @@
-{{define "subject"}}You've Unsubscribed from GIU Event Hub{{end}}
+{{define "subject"}}We're Sorry to See You Go - Unsubscribed from {{if eq .Type "All"}}All Events{{else}}{{.Type}} Events{{end}} at GIU Event Hub{{end}}
 
 {{define "plainBody"}}
 Hi,
+We're sorry to see you go! You have successfully unsubscribed from GIU Event Hub.
 
-We're sorry to see you go! You've successfully unsubscribed from GIU Event Hub.
+{{if eq .Type "All"}}
+You have unsubscribed from all event updates happening on the GIU campus.
+{{else}}
+You have unsubscribed from the updates about the {{.Type}} category events happening on the GIU campus.
+{{end}}
 
-You will no longer receive updates about events happening on the GIU campus. If this was a mistake or you change your mind, you can resubscribe anytime by visiting our website.
+If you change your mind, you can always resubscribe to receive updates about the exciting events.
 
-Best regards,  
+Thank you for your time, and we hope to welcome you back in the future.
+
+Best regards,
 The GIU Event Hub Team
 {{end}}
 
@@ -16,13 +23,21 @@ The GIU Event Hub Team
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
-    <meta http.equiv="Content-Type" content="text/html"; charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 
 <body>
     <p>Hi,</p>
-    <p>We're sorry to see you go! You've successfully unsubscribed from <strong>GIU Event Hub</strong>.</p>
-    <p>You will no longer receive updates about events happening on the GIU campus. If this was a mistake or you change your mind, you can resubscribe anytime by visiting our website.</p>
+    <p>We're sorry to see you go! You have successfully unsubscribed from GIU Event Hub.</p>
+
+    {{if eq .Type "All"}}
+    <p>You have unsubscribed from all event updates happening on the GIU campus.</p>
+    {{else}}
+    <p>You have unsubscribed from the updates about the <strong>{{.Type}}</strong> category events happening on the GIU campus.</p>
+    {{end}}
+
+    <p>If you change your mind, you can always resubscribe to receive updates about the exciting events.</p>
+    <p>Thank you for your time, and we hope to welcome you back in the future.</p>
     <p>Best regards,</p>
     <p>The GIU Event Hub Team</p>
 </body>

@@ -63,6 +63,7 @@ func connectToDb() {
 		log.Fatal(err)
 	}
 
+	mongoClient.Database("Notification-Service").CreateCollection(context.Background(), "mailingList")
 	mailingList = mongoClient.Database("Notification-Service").Collection("mailingList")
 	log.Println("Connected to MongoDB!")
 }
@@ -71,95 +72,38 @@ func (app *application) subscribe(w http.ResponseWriter, r *http.Request) {
 	userEmail := r.Header.Get("Email")
 	category := chi.URLParam(r, "category")
 
-	switch category {
-	case "general":
-		{
-			cursor, err := mailingList.Find(context.Background(), bson.M{})
-			if err != nil {
-				log.Fatal("Error fetching categories: ", err)
-				http.Error(w, "Failed to fetch categories", http.StatusInternalServerError)
-				return
-			}
-			defer cursor.Close(context.Background())
-
-			for cursor.Next(context.Background()) {
-				var doc bson.M
-				if err := cursor.Decode(&doc); err != nil {
-					log.Println("Error decoding document: ", err)
-					continue
-				}
-
-				_, err = mailingList.UpdateOne(context.Background(), bson.M{"category": doc["category"]}, bson.M{"$addToSet": bson.M{"emails": userEmail}})
-				if err != nil {
-					log.Println("Error adding email: ", err)
-				}
-			}
-			log.Println("Email added to all categories!")
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Email successfully subscribed to all categories!"))
-		}
-	default:
-		{
-			_, err := mailingList.UpdateOne(context.Background(), bson.M{"category": category}, bson.M{"$addToSet": bson.M{"emails": userEmail}}, options.Update().SetUpsert(true))
-			if err != nil {
-				log.Fatal("Error updating category: ", err)
-				http.Error(w, "Failed to subscribe", http.StatusInternalServerError)
-				return
-			}
-		}
-		log.Printf("Successfully subscribed %s to category %s", userEmail, category)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Successfully subscribed to category!"))
+	checker := mailingList.FindOne(context.Background(), bson.M{"category": category})
+	if checker.Err() != nil {
+		log.Println("There is no category with this name, making one...: ", checker.Err())
+		mailingList.InsertOne(context.Background(), bson.M{"category": category, "emails": []string{userEmail}})
+	}
+	_, err := mailingList.UpdateOne(context.Background(), bson.M{"category": category}, bson.M{"$addToSet": bson.M{"emails": userEmail}})
+	if err != nil {
+		log.Println("Error adding email: ", err)
+		return
 	}
 
+	log.Printf("Successfully subscribed %s to category %s", userEmail, category)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (app *application) unsubscribe(w http.ResponseWriter, r *http.Request) {
 	userEmail := r.Header.Get("Email")
-	log.Printf("Unsubscribing user: %s", userEmail)
 	category := chi.URLParam(r, "category")
-	log.Printf("from %s", category)
 
-	switch category {
-	case "general":
-		{
-			cursor, err := mailingList.Find(context.Background(), bson.M{})
-			if err != nil {
-				log.Fatal("Error fetching categories: ", err)
-				http.Error(w, "Failed to fetch categories", http.StatusInternalServerError)
-				return
-			}
-			defer cursor.Close(context.Background())
-
-			for cursor.Next(context.Background()) {
-				doc := bson.M{}
-				if err := cursor.Decode(&doc); err != nil {
-					log.Println("Error decoding document: ", err)
-					continue
-				}
-
-				err := mailingList.FindOneAndDelete(context.Background(), bson.M{"category": doc["category"], "emails": userEmail})
-				if err.Err() != nil {
-					log.Println("Error removing email: ", err.Err())
-				}
-				log.Println("Email removed from all categories!")
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("Successfully unsubscribed from all categories!"))
-			}
-		}
-	default:
-		{
-			err := mailingList.FindOneAndDelete(context.Background(), bson.M{"category": category, "emails": userEmail})
-			if err.Err() != nil {
-				log.Fatal("Error removing email: ", err)
-				http.Error(w, "Failed to unsubscribe", http.StatusInternalServerError)
-				return
-			}
-			log.Printf("Successfully unsubscribed %s from categorty %s", userEmail, category)
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Successfully unsubscribed from category!"))
-		}
+	checker := mailingList.FindOne(context.Background(), bson.M{"category": category})
+	if checker.Err() != nil {
+		log.Println("There is no category with this name, making one...: ", checker.Err())
+		mailingList.InsertOne(context.Background(), bson.M{"category": category, "emails": []string{userEmail}})
 	}
+	_, err := mailingList.UpdateOne(context.Background(), bson.M{"category": category}, bson.M{"$pull": bson.M{"emails": userEmail}})
+	if err != nil {
+		log.Println("Error removing email: ", err)
+		return
+	}
+
+	log.Printf("Successfully unsubscribed %s from category %s", userEmail, category)
+	w.WriteHeader(http.StatusOK)
 }
 
 // func (app * application) unsubscribeGeneral(w http.ResponseWriter, r *http.Request) {
@@ -279,7 +223,6 @@ func main() {
 	connectToDb()
 
 	r.Post("/subscribe/{category}", app.subscribe)
-	log.Printf("Setting up route: /unsubscribe/{category}")
 	r.Delete("/unsubscribe/{category}", app.unsubscribe)
 	// r.Post("/notify",app.notify)
 

@@ -40,6 +40,17 @@ services:
     ports:
       - "8082:80"
 
+  listener-service:
+    build:
+      context: ./listener-service
+      dockerfile: listener-service.Dockerfile
+    restart: always
+    ports:
+      - "8084:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+
   postgres:
     image: "postgres:latest"
     ports:

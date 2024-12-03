@@ -1,8 +1,10 @@
 package event
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -16,6 +18,8 @@ type Payload struct {
 	Topic string         `json:"topic"`
 	Data  map[string]any `json:"data"`
 }
+
+var notifyTopics = []string{"event-added", "event-updated", "event-deleted", "user-applied", "user-registered"}
 
 func NewConsumer(conn *amqp.Connection, queueName string) (*Consumer, error) {
 	consumer := &Consumer{
@@ -85,15 +89,36 @@ func (consumer *Consumer) Listen(topics []string) error {
 }
 
 func handlePayload(payload Payload) {
-	switch payload.Topic {
-	case "notify":
+	if In(payload.Topic, notifyTopics...) {
 		err := notify(payload)
 		if err != nil {
-			fmt.Println("Failed to notify")
+			fmt.Println(err)
 		}
 	}
 }
 
 func notify(payload Payload) error {
+	data, err := json.MarshalIndent(payload, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	request, err := http.NewRequest("POST", "http://notification-service/v1/notify", bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return err
+	}
 	return nil
 }

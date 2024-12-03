@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	webPort = ":8080"
+	webPort = ":80"
 	webEnv  = "development"
 )
 
@@ -51,7 +51,7 @@ type application struct {
 }
 
 func connectToDb() {
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27018")
+	clientOptions := options.Client().ApplyURI("mongodb://mongo:27017")
 	var err error
 	mongoClient, err = mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
@@ -475,11 +475,11 @@ func main() {
 	var cfg config
 	cfg.port = webPort
 	cfg.env = webEnv
-	cfg.smtp.host = "localhost"
-	portStr := "1025"
-	cfg.smtp.username = ""
-	cfg.smtp.password = ""
-	cfg.smtp.sender = "giu-event-hub@giu-uni.de"
+	cfg.smtp.host = os.Getenv("MAILHOG_HOST")
+	portStr := os.Getenv("MAILHOG_PORT")
+	cfg.smtp.username = os.Getenv("MAILHOG_USERNAME")
+	cfg.smtp.password = os.Getenv("MAILHOG_PASSWORD")
+	cfg.smtp.sender = os.Getenv("SENDER_EMAIL")
 
 	if cfg.smtp.host == "" || portStr == "" {
 		log.Fatal("Environment variables for Mailhog are not set")
@@ -503,9 +503,9 @@ func main() {
 	r := chi.NewRouter()
 	connectToDb()
 
-	r.Post("/v1/subscribe/{eventType}", app.subscribe)
-	r.Post("/v1/unsubscribe/{eventType}", app.unsubscribe)
-	r.Post("/v1/notify", app.notify)
+	r.Post("/subscribe/{eventType}", app.subscribe)
+	r.Post("/unsubscribe/{eventType}", app.unsubscribe)
+	r.Post("/notify", app.notify)
 
 	err = http.ListenAndServe(app.Config.port, r)
 

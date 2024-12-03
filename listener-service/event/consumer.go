@@ -13,8 +13,8 @@ type Consumer struct {
 }
 
 type Payload struct {
-	Name string `json:"name"`
-	Data string `json:"data"`
+	Topic string         `json:"topic"`
+	Data  map[string]any `json:"data"`
 }
 
 func NewConsumer(conn *amqp.Connection, queueName string) (*Consumer, error) {
@@ -85,7 +85,7 @@ func (consumer *Consumer) Listen(topics []string) error {
 }
 
 func handlePayload(payload Payload) {
-	switch payload.Name {
+	switch payload.Topic {
 	case "notify":
 		err := notify(payload)
 		if err != nil {

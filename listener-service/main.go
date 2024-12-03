@@ -6,6 +6,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/MohamedHossam2004/Event-Planner/listener-service/event"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -17,8 +18,18 @@ func main() {
 	}
 	defer rabbitConn.Close()
 	log.Println("Connected to RabbitMQ")
-}
 
+	consumer, err := event.NewConsumer(rabbitConn, "notify")
+	if err != nil {
+		panic(err)
+	}
+
+	topics := []string{"event-added", "event-updated", "event-deleted", "user-applied", "user-registered"}
+	err = consumer.Listen(topics)
+	if err != nil {
+		panic(err)
+	}
+}
 func connect() (*amqp.Connection, error) {
 	var counts int64
 	var backOff = 1 * time.Second

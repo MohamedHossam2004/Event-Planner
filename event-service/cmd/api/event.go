@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/MohamedHossam2004/Event-Planner/event-service/internal/data"
 	"github.com/go-chi/chi/v5"
@@ -63,6 +67,30 @@ func (app *application) createEventHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	location := fmt.Sprintf("%s,\n%s,\n%s,\n%s", createdEvent.Location.Address, createdEvent.Location.City, createdEvent.Location.State, createdEvent.Location.Country)
+
+	payload := map[string]any{
+		"event_type":        createdEvent.Type,
+		"event_name":        createdEvent.Name,
+		"event_date":        createdEvent.Date,
+		"event_description": createdEvent.Description,
+		"event_location":    location,
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		app.Logger.Printf("Error marshaling payload: %v", err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.pushToQueue("event_add", string(jsonPayload))
+	if err != nil {
+		app.Logger.Printf("Error pushing event to queue: %v", err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	app.writeJSON(w, http.StatusCreated, envelope{"event": createdEvent}, nil)
 }
 
@@ -91,6 +119,38 @@ func (app *application) updateEventHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	eventApps, err := app.models.EventApps.GetEventApp(context.Background(), id)
+	if err != nil {
+		app.Logger.Printf("Error fetching event apps: %v", err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if eventApps != nil {
+		emails := eventApps.Attendee
+
+		payload := map[string]any{
+			"emails":            emails,
+			"event_name":        event.Name,
+			"event_date":        event.Date,
+			"event_description": event.Description,
+		}
+
+		jsonPayload, err := json.Marshal(payload)
+		if err != nil {
+			app.Logger.Printf("Error marshaling payload: %v", err)
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+
+		err = app.pushToQueue("event_update", string(jsonPayload))
+		if err != nil {
+			app.Logger.Printf("Error pushing event to queue: %v", err)
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+	}
+
 	app.writeJSON(w, http.StatusOK, envelope{"event": updatedEvent}, nil)
 }
 
@@ -105,12 +165,51 @@ func (app *application) deleteEventHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = app.models.Event.DeleteEvent(id)
+	event, err := app.models.Event.GetEventByID(id)
 	if err != nil {
-		app.Logger.Printf("Error deleting event: %v", err)
-		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to delete event"}, nil)
+		app.Logger.Printf("Error fetching event by ID: %v", err)
+		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to fetch event"}, nil)
 		return
 	}
+	if event != nil {
+		err = app.models.Event.DeleteEvent(id)
+		if err != nil {
+			app.Logger.Printf("Error deleting event: %v", err)
+			app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to delete event"}, nil)
+			return
+		}
 
-	w.WriteHeader(http.StatusNoContent)
+		if event.Date.After(time.Now()) {
+			eventApps, err := app.models.EventApps.GetEventApp(context.Background(), id)
+			if err != nil {
+				app.Logger.Printf("Error fetching event apps: %v", err)
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			emails := eventApps.Attendee
+
+			payload := map[string]any{
+				"emails":     emails,
+				"event_name": event.Name,
+				"event_date": event.Date,
+			}
+
+			jsonPayload, err := json.Marshal(payload)
+			if err != nil {
+				app.Logger.Printf("Error marshaling payload: %v", err)
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+
+			err = app.pushToQueue("event_remove", string(jsonPayload))
+			if err != nil {
+				app.Logger.Printf("Error pushing event to queue: %v", err)
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+		}
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"message": "Event deleted successfully"}, nil)
 }

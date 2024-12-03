@@ -7,8 +7,16 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/MohamedHossam2004/Event-Planner/event-service/rabbit"
 )
+
 type envelope map[string]any
+
+type payload struct {
+	Topic string         `json:"topic"`
+	Data  map[string]any `json:"data"`
+}
 
 func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	maxBytes := 1_048_576
@@ -80,6 +88,37 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 	return nil
 }
 
+func (app *application) pushToQueue(name, msg string) error {
+	emitter, err := rabbit.NewEventEmitter(app.Rabbit)
+	if err != nil {
+		return err
+	}
+
+	data := envelope{}
+
+	err = json.Unmarshal([]byte(msg), &data)
+	if err != nil {
+		return err
+	}
+
+	payload := payload{
+		Topic: name,
+		Data:  data,
+	}
+
+	json, err := json.MarshalIndent(&payload, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	err = emitter.Push(string(json), name)
+	if err != nil {
+		return err
+	}
+
+	app.Logger.Println("Pushed event to queue", name, string(json))
+	return nil
+}
 
 func (app *application) background(fn func()) {
 	go func() {

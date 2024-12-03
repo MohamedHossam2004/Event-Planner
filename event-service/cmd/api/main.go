@@ -4,20 +4,23 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/MohamedHossam2004/Event-Planner/event-service/internal/data"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Database instance
 var db *mongo.Database
+
 const (
-	webPort = "80"
-	webEnv  = "development"
+	webPort  = "80"
+	webEnv   = "development"
 	mongoURL = "mongodb://mongo:27017"
 )
 
@@ -30,6 +33,7 @@ type application struct {
 	config config
 	Logger *log.Logger
 	models data.Models
+	Rabbit *amqp.Connection
 }
 
 func main() {
@@ -46,7 +50,14 @@ func main() {
 	if db == nil {
 		log.Panic("could not connect to database")
 	}
-	
+
+	// Connect to RabbitMQ
+	rabbitConn, err := connectToRabbit()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rabbitConn.Close()
+	log.Println("Connected to RabbitMQ")
 
 	// Create a logger
 	logger := log.New(os.Stdout, "", log.Ldate|log.LUTC)
@@ -56,6 +67,7 @@ func main() {
 		config: cfg,
 		Logger: logger,
 		models: data.NewModels(db),
+		Rabbit: rabbitConn,
 	}
 
 	// Log the server start
@@ -77,7 +89,7 @@ func main() {
 }
 
 // Connect initializes the database connection for the Event-service
-func Connect() {
+func connect() {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -115,4 +127,31 @@ func connectToMongo() (*mongo.Client, error) {
 // GetCollection returns a specific collection
 func GetCollection(collectionName string) *mongo.Collection {
 	return db.Collection(collectionName)
+}
+
+func connectToRabbit() (*amqp.Connection, error) {
+	var counts int64
+	var backOff = 1 * time.Second
+	var connection *amqp.Connection
+
+	for {
+		c, err := amqp.Dial("amqp://guest:guest@rabbitmq")
+		if err != nil {
+			fmt.Println("RabbitMQ Not yet ready...")
+			counts++
+		} else {
+			connection = c
+			break
+		}
+		if counts > 5 {
+			fmt.Println(err)
+			return nil, err
+		}
+
+		backOff = time.Duration(math.Pow(float64(counts), 2)) * time.Second
+		log.Printf("Retrying in %v\n", backOff)
+		time.Sleep(backOff)
+	}
+
+	return connection, nil
 }

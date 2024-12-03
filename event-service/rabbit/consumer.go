@@ -1,4 +1,4 @@
-package event
+package rabbit
 
 import (
 	"bytes"
@@ -19,7 +19,7 @@ type Payload struct {
 	Data  map[string]any `json:"data"`
 }
 
-var notifyTopics = []string{"event_add", "event_update", "event_remove", "event_register", "user_registered"}
+var notifyTopics = []string{"event-added", "event-updated", "event-deleted", "user-applied", "user-registered"}
 
 func NewConsumer(conn *amqp.Connection, queueName string) (*Consumer, error) {
 	consumer := &Consumer{
@@ -103,7 +103,7 @@ func notify(payload Payload) error {
 		return err
 	}
 
-	request, err := http.NewRequest("POST", "http://notification-service/notify", bytes.NewBuffer(data))
+	request, err := http.NewRequest("POST", "http://notification-service/v1/notify", bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}

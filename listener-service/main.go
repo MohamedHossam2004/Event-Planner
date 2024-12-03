@@ -24,7 +24,7 @@ func main() {
 		panic(err)
 	}
 
-	topics := []string{"event-added", "event-updated", "event-deleted", "user-applied", "user-registered"}
+	topics := []string{"event_add", "event_update", "event_remove", "event_register", "user_registered"}
 	err = consumer.Listen(topics)
 	if err != nil {
 		panic(err)

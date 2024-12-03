@@ -52,6 +52,10 @@ type application struct {
 
 func connectToDb() {
 	clientOptions := options.Client().ApplyURI("mongodb://mongo:27017")
+	clientOptions.SetAuth(options.Credential{
+		Username: "admin",
+		Password: "password",
+	})
 	var err error
 	mongoClient, err = mongo.Connect(context.Background(), clientOptions)
 	if err != nil {

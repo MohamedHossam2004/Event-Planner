@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/MohamedHossam2004/Event-Planner/event-service/internal/data"
+	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -21,6 +23,34 @@ func (app *application) createEventAppHandler(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		app.Logger.Printf("Error creating event app: %v\n", err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to create event app"}, nil)
+		return
+	}
+
+	event, err := app.models.Event.GetEventByID(eventApp.EventID)
+	if err != nil {
+		app.Logger.Printf("Error fetching event with ID %s: %v\n", eventApp.EventID.Hex(), err)
+		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to fetch event"}, nil)
+		return
+	}
+
+	payload := map[string]any{
+		"event_name":     event.Name,
+		"event_date":     event.Date,
+		"event_location": fmt.Sprintf("%s,%s,%s,%s", event.Location.Address, event.Location.City, event.Location.State, event.Location.Country),
+		"emails":         eventApp.Attendee,
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		app.Logger.Printf("Error marshaling payload: %v\n", err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.pushToQueue("event_register", string(jsonPayload))
+	if err != nil {
+		app.Logger.Printf("Error pushing to queue: %v\n", err)
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 
@@ -96,5 +126,5 @@ func (app *application) deleteEventAppHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, envelope{"message": "Event app deleted successfully"}, nil)
+	app.writeJSON(w, http.StatusNoContent, envelope{"message": "Event app deleted successfully"}, nil)
 }

@@ -83,7 +83,7 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 
 func (app *application) handleResponseStatus(w http.ResponseWriter, r *http.Request, statusCode int, payload map[string]any) {
 	switch statusCode {
-	case http.StatusOK, http.StatusCreated, http.StatusAccepted:
+	case http.StatusOK, http.StatusCreated, http.StatusAccepted, http.StatusNoContent:
 		err := app.writeJSON(w, statusCode, payload, nil)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)

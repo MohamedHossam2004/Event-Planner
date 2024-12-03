@@ -2,6 +2,7 @@ FRONT_END_BINARY=frontApp
 BROKER_BINARY=brokerApp
 AUTH_BINARY=authApp
 EVENT_BINARY=eventApp
+NOTIFICATION_BINARY=notificationApp
 
 ## up: starts all containers in the background without forcing build
 up:
@@ -10,7 +11,7 @@ up:
 	@echo "Docker images started!"
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
-up_build: build_broker build_auth build_event
+up_build: build_broker build_auth build_event build_notification
 	@echo "Stopping docker images (if running...)"
 	docker-compose down
 	@echo "Building (when required) and starting docker images..."
@@ -33,6 +34,11 @@ build_broker:
 build_auth:
 	@echo "Building authentication binary..."
 	cd ./authentication-service && env GOOS=linux CGO_ENABLED=0 go build -o ${AUTH_BINARY} ./cmd/api
+	@echo "Done!"
+
+build_notification:
+	@echo "Building notification binary..."
+	cd ./notification-service && env GOOS=linux CGO_ENABLED=0 go build -o ${NOTIFICATION_BINARY} ./cmd/api
 	@echo "Done!"
 
 ## build_event: builds the event binary as a linux executable

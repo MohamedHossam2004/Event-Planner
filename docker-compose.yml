@@ -40,6 +40,23 @@ services:
     ports:
       - "8082:80"
 
+  notificatiion-service:
+    build:
+      context: ./notification-service
+      dockerfile: notification-service.Dockerfile
+    restart: always
+    ports:
+      - "8083:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      MAILHOG_HOST: mailhog
+      MAILHOG_PORT: 1025
+      MAILHOG_USERNAME: ""
+      MAILHOG_PASSWORD: ""
+      SENDER_EMAIL: giu-event-hub@giu-uni.de
+
   postgres:
     image: "postgres:latest"
     ports:

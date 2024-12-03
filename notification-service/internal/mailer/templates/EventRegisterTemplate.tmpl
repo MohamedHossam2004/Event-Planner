@@ -1,0 +1,42 @@
+{{define "subject"}}Registration Confirmation: {{.Name}}{{end}}
+
+{{define "plainBody"}}
+Hi,
+
+Thank you for registering for the event "{{.Name}}" scheduled for {{.Date}}.
+
+We are excited to have you join us! Below are the event details:
+Event: {{.Name}}
+Date: {{.Date}}
+Location: {{.Location}}
+
+If you have any questions, feel free to reach out. We look forward to seeing you there!
+
+Best regards,
+The GIU Event Hub Team
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http.equiv="Content-Type" content="text/html"; charset="UTF-8" />
+</head>
+
+<body>
+    <p>Hi,</p>
+    <p>Thank you for registering for the event <strong>{{.Name}}</strong> scheduled for <strong>{{.Date}}</strong>.</p>
+    <p>We are excited to have you join us! Below are the event details:</p>
+    <ul>
+        <li><strong>Event:</strong> {{.Name}}</li>
+        <li><strong>Date:</strong> {{.Date}}</li>
+        <li><strong>Location:</strong> {{.Location}}</li>
+    </ul>
+    <p>If you have any questions, feel free to reach out. We look forward to seeing you there!</p>
+    <p>Best regards,</p>
+    <p>The GIU Event Hub Team</p>
+</body>
+
+</html>
+{{end}}

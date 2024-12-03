@@ -1,0 +1,32 @@
+{{define "subject"}}Event Deletion Notification: {{.Name}}{{end}}
+
+{{define "plainBody"}}
+Hi,
+
+We regret to inform you that the event "{{.Name}}" scheduled for {{.Date}} has been canceled.
+
+We apologize for any inconvenience this may have caused. Please stay tuned for upcoming events, and we hope to see you at our future gatherings!
+
+Best regards,
+The GIU Event Hub Team
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http.equiv="Content-Type" content="text/html"; charset="UTF-8" />
+</head>
+
+<body>
+    <p>Hi,</p>
+    <p>We regret to inform you that the event <strong>{{.Name}}</strong> scheduled for <strong>{{.Date}}</strong> has been canceled.</p>
+    <p>We apologize for any inconvenience this may have caused. Please stay tuned for upcoming events, and we hope to see you at our future gatherings!</p>
+    <p>Best regards,</p>
+    <p>The GIU Event Hub Team</p>
+</body>
+
+</html>
+{{end}}
+

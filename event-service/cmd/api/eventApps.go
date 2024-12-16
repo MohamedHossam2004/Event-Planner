@@ -12,24 +12,40 @@ import (
 )
 
 func (app *application) createEventAppHandler(w http.ResponseWriter, r *http.Request) {
-	var eventApp data.EventApps
+	var eventApp struct {
+		ID       primitive.ObjectID
+		EventID  primitive.ObjectID
+		Attendee []string
+	}
 	err := app.readJSON(w, r, &eventApp)
+
 	if err != nil {
-		app.writeJSON(w, http.StatusBadRequest, envelope{"error": err.Error()}, nil)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	err = app.models.EventApps.CreateEventApp(context.Background(), &eventApp)
+	if eventApp.EventID.IsZero() {
+		app.badRequestResponse(w, r, fmt.Errorf("EventID is required"))
+		return
+	}
+
+	eventAppData := data.EventApps{
+		ID:       eventApp.ID,
+		EventID:  eventApp.EventID,
+		Attendee: eventApp.Attendee,
+	}
+
+	err = app.models.EventApps.CreateEventApp(context.Background(), &eventAppData)
 	if err != nil {
 		app.Logger.Printf("Error creating event app: %v\n", err)
-		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to create event app"}, nil)
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 
 	event, err := app.models.Event.GetEventByID(eventApp.EventID)
 	if err != nil {
 		app.Logger.Printf("Error fetching event with ID %s: %v\n", eventApp.EventID.Hex(), err)
-		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to fetch event"}, nil)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 

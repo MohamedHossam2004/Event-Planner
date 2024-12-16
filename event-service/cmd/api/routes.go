@@ -32,11 +32,11 @@ func (h *application) routes() http.Handler {
 	})
 
 	r.Route("/v1/eventApps", func(r chi.Router) {
-		r.Get("/", h.getAllEventAppsHandler)        // GET /eventApps
-		r.Get("/{id}", h.getEventAppByIDHandler)    // GET /eventApps/{id}
-		r.Post("/", h.createEventAppHandler)        // POST /eventApps
-		r.Put("/{id}", h.updateEventAppHandler)     // PUT /eventApps/{id}
-		r.Delete("/{id}", h.deleteEventAppHandler)  // DELETE /eventApps/{id}
+		r.Get("/", h.getAllEventAppsHandler)       // GET /eventApps
+		r.Get("/{id}", h.getEventAppByIDHandler)   // GET /eventApps/{id}
+		r.Post("/", h.createEventAppHandler)       // POST /eventApps
+		r.Put("/{id}", h.updateEventAppHandler)    // PUT /eventApps/{id}
+		r.Delete("/{id}", h.deleteEventAppHandler) // DELETE /eventApps/{id}
 	})
 
 	return r

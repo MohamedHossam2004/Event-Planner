@@ -10,6 +10,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type EventModelInterface interface {
+	CreateEvent(event *Event) (*Event, error)
+	GetEventByID(id primitive.ObjectID) (*Event, error)
+	UpdateEvent(id primitive.ObjectID, event *Event) (*Event, error)
+	DeleteEvent(id primitive.ObjectID) error
+	GetAllEvents() ([]Event, error)
+}
+
 // EventType represents the type of event
 type EventType string
 

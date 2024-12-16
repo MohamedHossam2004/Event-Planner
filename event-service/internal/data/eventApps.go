@@ -1,18 +1,27 @@
 package data
 
 import (
-	"fmt"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"context"
+	"fmt"
+
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type EventAppModelInterface interface {
+	CreateEventApp(ctx context.Context, eventApp *EventApps) error
+	GetEventApp(ctx context.Context, id primitive.ObjectID) (*EventApps, error)
+	UpdateEventApp(ctx context.Context, id primitive.ObjectID, update bson.M) error
+	DeleteEventApp(ctx context.Context, id primitive.ObjectID) error
+	ListEventApps(ctx context.Context, filter bson.M, opts *options.FindOptions) ([]*EventApps, error)
+}
+
 type EventApps struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	EventID   primitive.ObjectID `bson:"event_id" json:"event_id" validate:"required"`
-	Attendee  []string          `bson:"attendee" json:"attendee" validate:"required"`
+	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	EventID  primitive.ObjectID `bson:"event_id" json:"event_id" validate:"required"`
+	Attendee []string           `bson:"attendee" json:"attendee" validate:"required"`
 }
 
 type EventAppModel struct {
@@ -38,7 +47,7 @@ func (s *EventAppModel) CreateEventApp(ctx context.Context, eventApp *EventApps)
 	}
 
 	eventApp.ID = primitive.NewObjectID()
-	
+
 	// Insert the event application
 	_, err = s.collection.InsertOne(ctx, eventApp)
 	if err != nil {

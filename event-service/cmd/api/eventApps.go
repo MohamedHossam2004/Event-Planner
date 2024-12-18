@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/MohamedHossam2004/Event-Planner/event-service/internal/data"
 	"github.com/go-chi/chi/v5"
@@ -102,31 +104,6 @@ func (app *application) getEventAppByIDHandler(w http.ResponseWriter, r *http.Re
 	app.writeJSON(w, http.StatusOK, envelope{"event_app": eventApp}, nil)
 }
 
-func (app *application) updateEventAppHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	objID, err := primitive.ObjectIDFromHex(idStr)
-	if err != nil {
-		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID"}, nil)
-		return
-	}
-
-	var update map[string]interface{}
-	err = app.readJSON(w, r, &update)
-	if err != nil {
-		app.writeJSON(w, http.StatusBadRequest, envelope{"error": err.Error()}, nil)
-		return
-	}
-
-	err = app.models.EventApps.UpdateEventApp(context.Background(), objID, update)
-	if err != nil {
-		app.Logger.Printf("Error updating event app with ID %s: %v\n", idStr, err)
-		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to update event app"}, nil)
-		return
-	}
-
-	app.writeJSON(w, http.StatusOK, envelope{"message": "Event app updated successfully"}, nil)
-}
-
 func (app *application) deleteEventAppHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	objID, err := primitive.ObjectIDFromHex(idStr)
@@ -143,4 +120,148 @@ func (app *application) deleteEventAppHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	app.writeJSON(w, http.StatusNoContent, envelope{"message": "Event app deleted successfully"}, nil)
+}
+
+func (app *application) applyToEventHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	objID, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID"}, nil)
+		return
+	}
+
+	email, _, _, err := app.extractTokenData(r)
+	if err != nil {
+		app.writeJSON(w, http.StatusUnauthorized, envelope{"error": "Invalid token"}, nil)
+		return
+	}
+
+	eventApp, err := app.models.EventApps.GetEventApp(context.Background(), objID)
+	if err != nil {
+		if errors.Is(err, data.ErrNoRecords) {
+			app.writeJSON(w, http.StatusNotFound, envelope{"error": "Event app not found"}, nil)
+			return
+		}
+		app.Logger.Printf("Error fetching event app with ID %s: %v\n", idStr, err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if app.Contains(eventApp.Attendee, email) {
+		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "You already applied to this event"}, nil)
+		return
+	}
+
+	event, err := app.models.Event.GetEventByID(objID)
+	if err != nil {
+		if errors.Is(err, data.ErrNoRecords) {
+			app.writeJSON(w, http.StatusNotFound, envelope{"error": "Event not found"}, nil)
+			return
+		}
+		app.Logger.Printf("Error fetching event with ID %s: %v\n", objID.Hex(), err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	if event.Date.Before(time.Now()) {
+		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Event has ended"}, nil)
+		return
+	}
+
+	err = app.models.EventApps.AddAttendeeToEvent(email, objID)
+	if err != nil {
+		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to apply to event"}, nil)
+		return
+	}
+
+	payload := map[string]any{
+		"event_name":     event.Name,
+		"event_date":     event.Date,
+		"event_location": fmt.Sprintf("%s,%s,%s,%s", event.Location.Address, event.Location.City, event.Location.State, event.Location.Country),
+		"emails":         []string{email},
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		app.Logger.Printf("Error marshaling payload: %v\n", err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.pushToQueue("event_register", string(jsonPayload))
+	if err != nil {
+		app.Logger.Printf("Error pushing to queue: %v\n", err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"message": "Applied to event successfully"}, nil)
+}
+
+func (app *application) removeUserEventApplication(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	objID, err := primitive.ObjectIDFromHex(idStr)
+	if err != nil {
+		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID"}, nil)
+		return
+	}
+
+	email, _, _, err := app.extractTokenData(r)
+	if err != nil {
+		app.writeJSON(w, http.StatusUnauthorized, envelope{"error": "Invalid token"}, nil)
+		return
+	}
+
+	eventApp, err := app.models.EventApps.GetEventApp(context.Background(), objID)
+	if err != nil {
+		if errors.Is(err, data.ErrNoRecords) {
+			app.writeJSON(w, http.StatusNotFound, envelope{"error": "Event app not found"}, nil)
+			return
+		}
+		app.Logger.Printf("Error fetching event app with ID %s: %v\n", idStr, err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if !app.Contains(eventApp.Attendee, email) {
+		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "You have not applied to this event"}, nil)
+		return
+	}
+
+	event, err := app.models.Event.GetEventByID(objID)
+	if err != nil {
+		if errors.Is(err, data.ErrNoRecords) {
+			app.writeJSON(w, http.StatusNotFound, envelope{"error": "Event not found"}, nil)
+			return
+		}
+		app.Logger.Printf("Error fetching event with ID %s: %v\n", objID.Hex(), err)
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	if event.Date.Before(time.Now()) {
+		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Event has ended"}, nil)
+		return
+	}
+
+	err = app.models.EventApps.RemoveAttendeeFromEvent(email, objID)
+	if err != nil {
+		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to remove user event application"}, nil)
+		return
+	}
+	app.writeJSON(w, http.StatusOK, envelope{"message": "Removed user event application successfully"}, nil)
+}
+
+func (app *application) viewAppliedEventsHandler(w http.ResponseWriter, r *http.Request) {
+	email, _, _, err := app.extractTokenData(r)
+	if err != nil {
+		app.writeJSON(w, http.StatusUnauthorized, envelope{"error": "Invalid token"}, nil)
+		return
+	}
+
+	events, err := app.models.EventApps.GetEventsByUserEmail(email)
+	if err != nil {
+		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to fetch events"}, nil)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"events": events}, nil)
 }

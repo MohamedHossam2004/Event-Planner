@@ -2,12 +2,17 @@ package data
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+)
+
+var (
+	ErrNoRecords = errors.New("no records found")
 )
 
 type EventModelInterface interface {
@@ -126,7 +131,7 @@ func (es EventModel) GetEventByID(id primitive.ObjectID) (*Event, error) {
 	err := es.collection.FindOne(context.Background(), filter).Decode(&event)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, nil // No event found
+			return nil, ErrNoRecords // No event found
 		}
 		return nil, err
 	}

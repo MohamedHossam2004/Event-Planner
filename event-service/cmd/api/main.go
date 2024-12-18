@@ -27,6 +27,9 @@ const (
 type config struct {
 	port string
 	env  string
+	jwt  struct {
+		secret string
+	}
 }
 
 type application struct {
@@ -40,6 +43,7 @@ func main() {
 	var cfg config
 	cfg.port = webPort
 	cfg.env = webEnv
+	cfg.jwt.secret = os.Getenv("JWT_SECRET")
 
 	// Connect to the MongoDB database
 	mongoClient, err := connectToMongo()

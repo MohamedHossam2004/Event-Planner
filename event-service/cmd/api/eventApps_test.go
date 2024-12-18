@@ -49,6 +49,21 @@ func (m *MockEventAppModel) ListEventApps(ctx context.Context, filter bson.M, op
 	return args.Get(0).([]*data.EventApps), args.Error(1)
 }
 
+func (m *MockEventAppModel) AddAttendeeToEvent(name string, eventId primitive.ObjectID) error {
+	args := m.Called(name, eventId)
+	return args.Error(0)
+}
+
+func (m *MockEventAppModel) RemoveAttendeeFromEvent(name string, eventId primitive.ObjectID) error {
+	args := m.Called(name, eventId)
+	return args.Error(0)
+}
+
+func (m *MockEventAppModel) GetEventsByUserEmail(email string) ([]*data.Event, error) {
+	args := m.Called(email)
+	return args.Get(0).([]*data.Event), args.Error(1)
+}
+
 func TestCreateEventAppHandler(t *testing.T) {
 	mockEventAppModel := new(MockEventAppModel)
 	mockEventModel := new(MockEventModel)

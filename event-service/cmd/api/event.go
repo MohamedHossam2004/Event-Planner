@@ -67,6 +67,17 @@ func (app *application) createEventHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	err = app.models.EventApps.CreateEventApp(context.Background(), &data.EventApps{
+		ID:       primitive.NewObjectID(),
+		EventID:  createdEvent.ID,
+		Attendee: []string{},
+	})
+	if err != nil {
+		app.Logger.Printf("Error creating event app: %v", err)
+		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to create event app"}, nil)
+		return
+	}
+
 	location := fmt.Sprintf("%s,\n%s,\n%s,\n%s", createdEvent.Location.Address, createdEvent.Location.City, createdEvent.Location.State, createdEvent.Location.Country)
 
 	payload := map[string]any{

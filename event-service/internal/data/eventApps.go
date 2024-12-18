@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,12 +11,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var (
+	ErrEventEnded     = errors.New("Event is finished")
+	ErrAlreadyApplied = errors.New("User has already applied for this event")
+	ErrNotApplied     = errors.New("User didn't apply to event")
+)
+
 type EventAppModelInterface interface {
 	CreateEventApp(ctx context.Context, eventApp *EventApps) error
 	GetEventApp(ctx context.Context, id primitive.ObjectID) (*EventApps, error)
 	UpdateEventApp(ctx context.Context, id primitive.ObjectID, update bson.M) error
 	DeleteEventApp(ctx context.Context, id primitive.ObjectID) error
 	ListEventApps(ctx context.Context, filter bson.M, opts *options.FindOptions) ([]*EventApps, error)
+	AddAttendeeToEvent(name string, eventId primitive.ObjectID) error
+	RemoveAttendeeFromEvent(name string, eventId primitive.ObjectID) error
+	GetEventsByUserEmail(email string) ([]*Event, error)
 }
 
 type EventApps struct {
@@ -54,13 +64,6 @@ func (s *EventAppModel) CreateEventApp(ctx context.Context, eventApp *EventApps)
 		return err
 	}
 
-	// Update the number_of_applications in the Event document
-	update := bson.M{"$inc": bson.M{"number_of_applications": 1}}
-	_, err = s.eventService.collection.UpdateOne(
-		ctx,
-		bson.M{"_id": eventApp.EventID},
-		update,
-	)
 	return err
 }
 
@@ -68,6 +71,9 @@ func (s *EventAppModel) GetEventApp(ctx context.Context, id primitive.ObjectID) 
 	var eventApp EventApps
 	err := s.collection.FindOne(ctx, bson.M{"event_id": id}).Decode(&eventApp)
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNoRecords
+		}
 		return nil, err
 	}
 	return &eventApp, nil
@@ -104,4 +110,72 @@ func (s *EventAppModel) ListEventApps(ctx context.Context, filter bson.M, opts *
 	}
 
 	return eventApps, nil
+}
+
+func (e *EventAppModel) AddAttendeeToEvent(name string, eventId primitive.ObjectID) error {
+	_, err := e.collection.UpdateOne(context.Background(), bson.M{"event_id": eventId}, bson.M{"$push": bson.M{"attendee": name}})
+	if err != nil {
+		return err
+	}
+	update := bson.M{"$inc": bson.M{"number_of_applications": -1}}
+	_, err = e.eventService.collection.UpdateOne(
+		context.Background(),
+		bson.M{"_id": eventId},
+		update,
+	)
+	return err
+}
+
+func (e *EventAppModel) RemoveAttendeeFromEvent(name string, eventId primitive.ObjectID) error {
+	_, err := e.collection.UpdateOne(context.Background(), bson.M{"event_id": eventId}, bson.M{"$pull": bson.M{"attendee": name}})
+	if err != nil {
+		return err
+	}
+	update := bson.M{"$inc": bson.M{"number_of_applications": 1}}
+	_, err = e.eventService.collection.UpdateOne(
+		context.Background(),
+		bson.M{"_id": eventId},
+		update,
+	)
+
+	return err
+}
+
+func (e *EventAppModel) GetEventsByUserEmail(email string) ([]*Event, error) {
+	filter := bson.M{"attendee": bson.M{"$in": []string{email}}}
+
+	eventApps, err := e.collection.Find(context.Background(), filter)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, ErrNoRecords
+		}
+		return nil, err
+	}
+
+	var events []*Event
+	for eventApps.Next(context.Background()) {
+		var eventApp EventApps
+		if err := eventApps.Decode(&eventApp); err != nil {
+			return nil, err
+		}
+
+		eventObjID, err := primitive.ObjectIDFromHex(eventApp.EventID.Hex())
+		if err != nil {
+			return nil, err
+		}
+
+		event, err := e.eventService.GetEventByID(eventObjID)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				continue
+			}
+			return nil, err
+		}
+		events = append(events, event)
+	}
+
+	if err := eventApps.Err(); err != nil {
+		return nil, err
+	}
+	return events, nil
 }

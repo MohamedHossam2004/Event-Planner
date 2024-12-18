@@ -29,14 +29,16 @@ func (h *application) routes() http.Handler {
 		r.Post("/", h.createEventHandler)       // POST /events
 		r.Put("/{id}", h.updateEventHandler)    // PUT /events/{id}
 		r.Delete("/{id}", h.deleteEventHandler) // DELETE /events/{id}
+		r.Post("/{id}/apply", h.applyToEventHandler)
+		r.Delete("/{id}/unapply", h.removeUserEventApplication)
 	})
 
 	r.Route("/v1/eventApps", func(r chi.Router) {
 		r.Get("/", h.getAllEventAppsHandler)       // GET /eventApps
 		r.Get("/{id}", h.getEventAppByIDHandler)   // GET /eventApps/{id}
 		r.Post("/", h.createEventAppHandler)       // POST /eventApps
-		r.Put("/{id}", h.updateEventAppHandler)    // PUT /eventApps/{id}
 		r.Delete("/{id}", h.deleteEventAppHandler) // DELETE /eventApps/{id}
+		r.Get("/user", h.viewAppliedEventsHandler)
 	})
 
 	return r

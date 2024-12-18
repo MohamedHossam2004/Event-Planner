@@ -119,7 +119,7 @@ func (app *application) createAuthenticationTokenHandler(w http.ResponseWriter, 
 	claims.Expires = jwt.NewNumericTime(time.Now().Add(24 * time.Hour))
 	claims.Issuer = "giu-event-hub.com"
 	claims.Audiences = []string{"giu-event-hub.com"}
-	claims.Set = map[string]any{"isAdmin": user.IsAdmin, "isActivated": user.Activated}
+	claims.Set = map[string]any{"isAdmin": user.IsAdmin, "isActivated": user.Activated, "email": user.Email}
 
 	jwtBytes, err := claims.HMACSign(jwt.HS256, []byte(app.config.jwt.secret))
 	if err != nil {

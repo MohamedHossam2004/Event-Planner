@@ -7,8 +7,10 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/MohamedHossam2004/Event-Planner/event-service/rabbit"
+	"github.com/pascaldekloe/jwt"
 )
 
 type envelope map[string]any
@@ -129,4 +131,49 @@ func (app *application) background(fn func()) {
 		}()
 		fn()
 	}()
+}
+
+func (app *application) extractTokenData(r *http.Request) (string, bool, bool, error) {
+	token := r.Header.Get("Authorization")
+
+	if token == "" {
+		return "", false, false, errors.New("missing authorization header")
+	}
+
+	token = strings.TrimSpace(strings.Replace(token, "Bearer", "", 1))
+
+	claims, err := jwt.HMACCheck([]byte(token), []byte(app.config.jwt.secret))
+	if err != nil {
+		return "", false, false, err
+	}
+
+	if !claims.Valid(time.Now()) {
+		return "", false, false, errors.New("invalid token")
+	}
+
+	userEmail, ok := claims.Set["email"].(string)
+	if !ok {
+		return "", false, false, errors.New("invalid token")
+	}
+
+	role, ok := claims.Set["isAdmin"].(bool)
+	if !ok {
+		return "", false, false, errors.New("invalid token")
+	}
+
+	isActivated, ok := claims.Set["isActivated"].(bool)
+	if !ok {
+		return "", false, false, errors.New("invalid token")
+	}
+
+	return userEmail, role, isActivated, nil
+}
+
+func (app *application) Contains(slice []string, item string) bool {
+	for _, v := range slice {
+		if v == item {
+			return true
+		}
+	}
+	return false
 }

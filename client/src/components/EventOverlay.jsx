@@ -10,8 +10,8 @@ export const EventOverlay = ({ event, onClose }) => {
   const progressPercentage = (availableSpots / totalSpots) * 100;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+      <div className="relative p-6 border w-full max-w-4xl shadow-lg rounded-2xl bg-white">
         {/* Close Button */}
         <button
           onClick={onClose}

@@ -1,3 +1,4 @@
+import React from "react";
 import { MapPin, Clock, Users, Calendar } from "lucide-react";
 import { formatDate, formatTime } from "../services/helpers";
 
@@ -30,7 +31,7 @@ export const EventCard = ({ event, onSelect }) => {
           </div>
           <div className="flex items-center gap-2 text-gray-600">
             <MapPin size={18} />
-            <span>{`${event.location.address}, ${event.location.city}, ${event.location.state}, ${event.location.country}`}</span>
+            <span>{`${event.location.address}, ${event.location.city}`}</span>
           </div>
         </div>
 

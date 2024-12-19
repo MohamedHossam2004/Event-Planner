@@ -14,7 +14,7 @@ export const Login = () => {
     try {
       const response = await login(email, password);
       document.cookie = `token=${response.authentication_token}; path=/; max-age=3600; SameSite=Strict`;
-      navigate("/");
+      window.location.href = "/";
     } catch (err) {
       setError(err.message || "An error occurred during login");
     }

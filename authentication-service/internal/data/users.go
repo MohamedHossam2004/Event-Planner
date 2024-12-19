@@ -152,7 +152,7 @@ func (m UserModel) Get(id int64) (*User, error) {
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
 	query := `
-		SELECT id, created_at, name, email, password_hash, activated, version
+		SELECT id, created_at, name, email, password_hash, activated, version, isadmin
 		FROM users
 		WHERE email = $1`
 
@@ -169,6 +169,7 @@ func (m UserModel) GetByEmail(email string) (*User, error) {
 		&user.Password.hash,
 		&user.Activated,
 		&user.Version,
+		&user.IsAdmin,
 	)
 
 	if err != nil {

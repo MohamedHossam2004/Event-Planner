@@ -28,7 +28,7 @@ export const HeroPage = () => {
     const fetchEvents = async () => {
       try {
         const data = await getEvents();
-        setEvents(data);
+        setEvents(data.events);
         setLoading(false);
       } catch {
         setError("Failed to fetch events. Please try again later.");

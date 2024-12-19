@@ -9,7 +9,7 @@ export const Stats = () => {
     const fetchEventCount = async () => {
       try {
         const events = await getEvents();
-        setEventCount(events.length);
+        setEventCount(events.events.length);
       } catch (error) {
         console.error("Failed to fetch event count", error);
       }

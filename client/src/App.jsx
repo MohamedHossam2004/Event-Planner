@@ -3,6 +3,7 @@ import { Header } from "./components/Header";
 import { Stats } from "./components/Stats";
 import { CategoryFilter } from "./components/CategoryFilter";
 import { EventList } from "./components/EventList";
+import { EventOverlay } from "./components/EventOverlay";
 import { getEvents } from "./services/api";
 
 function App() {
@@ -10,9 +11,18 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
+  };
+
+  const handleEventSelect = (event) => {
+    setSelectedEvent(event);
+  };
+
+  const handleCloseOverlay = () => {
+    setSelectedEvent(null);
   };
 
   useEffect(() => {
@@ -62,7 +72,10 @@ function App() {
         ) : error ? (
           <div className="text-center py-12 text-red-600">{error}</div>
         ) : (
-          <EventList events={filteredEvents} />
+          <EventList
+            events={filteredEvents}
+            onEventSelect={handleEventSelect}
+          />
         )}
       </main>
 
@@ -74,6 +87,10 @@ function App() {
           </p>
         </div>
       </footer>
+
+      {selectedEvent && (
+        <EventOverlay event={selectedEvent} onClose={handleCloseOverlay} />
+      )}
     </div>
   );
 }

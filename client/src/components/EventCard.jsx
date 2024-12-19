@@ -1,9 +1,12 @@
 import { MapPin, Clock, Users, Calendar } from "lucide-react";
 import { formatDate, formatTime } from "../services/helpers";
 
-export const EventCard = ({ event }) => {
+export const EventCard = ({ event, onSelect }) => {
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div
+      className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => onSelect(event)}
+    >
       <img
         src={event.imageUrl}
         alt={event.name}
@@ -36,7 +39,13 @@ export const EventCard = ({ event }) => {
             <Users size={18} />
             <span>{event.number_of_applications} spots left</span>
           </div>
-          <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+          <button
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(event);
+            }}
+          >
             View Details
           </button>
         </div>

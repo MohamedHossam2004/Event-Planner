@@ -38,6 +38,9 @@ type config struct {
 		password string
 		sender   string
 	}
+	jwt struct {
+		secret string
+	}
 }
 type payload struct {
 	Topic string         `json:"topic"`
@@ -91,7 +94,11 @@ func (app *application) isSubscribed(EventType, email string) bool {
 }
 
 func (app *application) subscribe(w http.ResponseWriter, r *http.Request) {
-	userEmail := r.Header.Get("Email")
+	userEmail, _, _, err := app.extractTokenData(r)
+	if err != nil {
+		app.writeJSON(w, http.StatusUnauthorized, envelope{"error": "Invalid token"}, nil)
+		return
+	}
 	eventType := chi.URLParam(r, "eventType")
 
 	isSubs := app.isSubscribed(eventType, userEmail)
@@ -104,7 +111,7 @@ func (app *application) subscribe(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	_, err := mailingList.UpdateOne(context.Background(), bson.M{"Event_Type": eventType}, bson.M{"$addToSet": bson.M{"emails": userEmail}}, options.Update().SetUpsert(true))
+	_, err = mailingList.UpdateOne(context.Background(), bson.M{"Event_Type": eventType}, bson.M{"$addToSet": bson.M{"emails": userEmail}}, options.Update().SetUpsert(true))
 
 	if err != nil {
 		log.Fatal("Error updating Mailling List: ", err)

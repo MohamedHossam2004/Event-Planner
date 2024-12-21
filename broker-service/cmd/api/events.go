@@ -365,3 +365,111 @@ func (app *application) deleteEventAppHandler(w http.ResponseWriter, r *http.Req
 
 	app.handleResponseStatus(w, r, response.StatusCode, payload)
 }
+
+func (app *application) applyToEventHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	if idStr == "" {
+		app.badRequestResponse(w, r, errors.New("missing id"))
+		return
+	}
+
+	request, err := http.NewRequest("POST", fmt.Sprintf("http://event-service/v1/events/%s/apply", idStr), r.Body)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	request.Header = r.Header
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	defer response.Body.Close()
+
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(responseBody, &payload); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.handleResponseStatus(w, r, response.StatusCode, payload)
+}
+
+func (app *application) removeUserEventApplication(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	if idStr == "" {
+		app.badRequestResponse(w, r, errors.New("missing id"))
+		return
+	}
+
+	request, err := http.NewRequest("DELETE", fmt.Sprintf("http://event-service/v1/events/%s/unapply", idStr), nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	request.Header = r.Header
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	defer response.Body.Close()
+
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(responseBody, &payload); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.handleResponseStatus(w, r, response.StatusCode, payload)
+}
+
+func (app *application) viewAppliedEventsHandler(w http.ResponseWriter, r *http.Request) {
+	request, err := http.NewRequest("GET", "http://event-service/v1/events/user", nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	request.Header = r.Header
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	defer response.Body.Close()
+
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(responseBody, &payload); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.handleResponseStatus(w, r, response.StatusCode, payload)
+}

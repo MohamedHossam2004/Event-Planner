@@ -8,6 +8,7 @@ import { CreateEventOverlay } from "./components/CreateEventOverlay";
 import { AuthProvider } from "./contexts/AuthContext";
 //import {RegisterdEvents} from './components/RegisterdEvents'
 import MyEvents from "./components/myevents";
+import EventApplications from "./components/eventApplications";
 
 function App() {
   const [showCreateEventOverlay, setShowCreateEventOverlay] = useState(false);
@@ -31,6 +32,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
              <Route path="/myevents" element={<MyEvents />} /> 
+             <Route path="/eventApplications" element={<EventApplications />} />
           </Routes>
 
           <footer className="bg-white border-t mt-16 py-8">

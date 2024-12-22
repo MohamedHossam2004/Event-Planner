@@ -106,3 +106,16 @@ export const applyToEvent = async (eventId) => {
     throw new Error(error.response?.data?.error || 'Failed to apply to event');
   }
 };
+
+export const getEventAppsForAdmin = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/eventApps`, {
+      headers: { Authorization: `Bearer ${getCookie('token')}` }
+    });
+    return response;
+  }
+
+  catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to fetch event applications for admin');
+  }
+}

@@ -26,14 +26,17 @@ export const HeroPage = () => {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      try {
+      
         const data = await getEvents();
-        setEvents(data.events);
-        setLoading(false);
-      } catch {
-        setError("Failed to fetch events. Please try again later.");
-        setLoading(false);
-      }
+        if(data.events !=null){
+          setEvents(data.events);
+          console.error(events)
+          setLoading(false);
+         }
+         else{
+          setError("Failed to fetch events. Please try again later.");
+          setLoading(false);
+         }
     };
 
     fetchEvents();
@@ -68,7 +71,8 @@ export const HeroPage = () => {
       ) : error ? (
         <div className="text-center py-12 text-red-600">{error}</div>
       ) : (
-        <EventList events={filteredEvents} onEventSelect={handleEventSelect} />
+         events && <EventList events={filteredEvents} onEventSelect={handleEventSelect} />
+         
       )}
 
       {selectedEvent && (

@@ -74,6 +74,24 @@ export const getEvents = async () => {
 };
 
 
+export const getEventsForUser = async()=>{
+  try{
+
+    const response = await axios.get(`${API_URL}/events/user`,{
+         headers: { Authorization: `Bearer ${getCookie('token')}` }
+       });
+       return response;
+
+
+  }
+  catch{
+
+    throw new Error(error.response?.data?.message || 'Failed to fetch events for user');
+
+  }
+}
+
+
 export const applyToEvent = async (eventId) => {
   try {
     const token = getCookie('token'); 

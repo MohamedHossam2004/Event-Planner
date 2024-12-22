@@ -443,7 +443,7 @@ func (app *application) removeUserEventApplication(w http.ResponseWriter, r *htt
 }
 
 func (app *application) viewAppliedEventsHandler(w http.ResponseWriter, r *http.Request) {
-	request, err := http.NewRequest("GET", "http://event-service/v1/events/user", nil)
+	request, err := http.NewRequest("GET", "http://event-service/v1/eventApps/user", nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return

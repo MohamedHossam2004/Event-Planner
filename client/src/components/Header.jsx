@@ -38,7 +38,9 @@ export const Header = ({ onCreateEvent }) => {
         <nav className="flex items-center space-x-4">
           {user ? (
             <>
-              <span className="text-white">Welcome, {user.name}</span>
+               <a className="text-white" href="/myevents">Welcome, {user.name}</a> 
+
+              
               <button
                 onClick={handleLogout}
                 className="text-white hover:text-purple-200"

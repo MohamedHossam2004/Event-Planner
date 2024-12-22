@@ -6,6 +6,8 @@ import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
 import { CreateEventOverlay } from "./components/CreateEventOverlay";
 import { AuthProvider } from "./contexts/AuthContext";
+//import {RegisterdEvents} from './components/RegisterdEvents'
+import MyEvents from "./components/myevents";
 
 function App() {
   const [showCreateEventOverlay, setShowCreateEventOverlay] = useState(false);
@@ -28,6 +30,7 @@ function App() {
             <Route path="/" element={<HeroPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+             <Route path="/myevents" element={<MyEvents />} /> 
           </Routes>
 
           <footer className="bg-white border-t mt-16 py-8">

@@ -14,7 +14,7 @@ export const login = async (email, password) => {
 
 export const signup = async (name, email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/signup`, { name, email, password });
+    const response = await axios.post(`${API_URL}/register`, { name, email, password });
     return response.data;
   } catch (error) {
     throw new Error(error.response?.data?.message || 'Signup failed');
@@ -73,3 +73,18 @@ export const getEvents = async () => {
   }
 };
 
+
+export const applyToEvent = async (eventId) => {
+  try {
+    const token = getCookie('token'); 
+    const response = await axios.post(`${API_URL}/events/${eventId}/apply`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`, 
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.log(error)
+    throw new Error(error.response?.data?.error || 'Failed to apply to event');
+  }
+};

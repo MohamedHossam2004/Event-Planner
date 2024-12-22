@@ -1,24 +1,46 @@
-import { useState } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { login } from "../services/api";
+import { AuthContext } from "../contexts/AuthContext";
+import { getCookie } from "../services/api";
+import { Loading } from "../components/Loading";
 
 export const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { setUser } = useContext(AuthContext);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setEmail("");
+    setPassword("");
     try {
       const response = await login(email, password);
       document.cookie = `token=${response.authentication_token}; path=/; max-age=3600; SameSite=Strict`;
-      window.location.href = "/";
+      setUser(response.user);
+      navigate("/");
     } catch (err) {
       setError(err.message || "An error occurred during login");
     }
   };
+
+  useEffect(() => {
+    setIsLoading(true);
+    const token = getCookie("token");
+    if (token) {
+      setIsLoading(false);
+      navigate("/");
+    }
+    setIsLoading(false);
+  }, []);
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -43,7 +65,7 @@ export const Login = () => {
                   id="email"
                   name="email"
                   type="email"
-                  autoComplete="email"
+                  placeholder="Enter you email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -64,7 +86,7 @@ export const Login = () => {
                   id="password"
                   name="password"
                   type="password"
-                  autoComplete="current-password"
+                  placeholder="Enter your password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

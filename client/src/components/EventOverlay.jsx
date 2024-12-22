@@ -1,8 +1,20 @@
-import React from "react";
+import { useState } from "react";
 import { X, Calendar, Clock, MapPin, Users } from "lucide-react";
 import { formatDate, formatTime } from "../services/helpers";
+import { applyToEvent } from "../services/api";
 
 export const EventOverlay = ({ event, onClose }) => {
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const onRegisterClick = async (eventId) => {
+    try {
+      setErrorMessage("");
+      const result = await applyToEvent(eventId);
+    } catch (error) {
+      setErrorMessage(error.message);
+    }
+  };
+
   if (!event) return null;
 
   const totalSpots = 500; // Example total capacity
@@ -22,6 +34,9 @@ export const EventOverlay = ({ event, onClose }) => {
         </button>
 
         <div className="flex flex-col">
+          {errorMessage && (
+            <div className="text-red-600 text-center mb-4">{errorMessage}</div>
+          )}
           {/* Title */}
           <h2 className="text-3xl font-bold text-gray-800 mb-4">
             {event.name}
@@ -88,7 +103,10 @@ export const EventOverlay = ({ event, onClose }) => {
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                <button className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium">
+                <button
+                  className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                  onClick={() => onRegisterClick(event._id)}
+                >
                   Register Now
                 </button>
                 <button className="w-full py-3 px-4 bg-white text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-medium">

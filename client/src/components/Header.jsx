@@ -1,16 +1,17 @@
-import React, { useContext } from "react";
-import { Link } from "react-router-dom";
+import React, { useContext, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Search, CalendarPlus } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
 import { logout } from "../services/api";
 
 export const Header = ({ onCreateEvent }) => {
   const { user, setUser } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     await logout();
     setUser(null);
-    window.location.href = "/";
+    navigate("/");
   };
 
   return (

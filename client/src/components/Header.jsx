@@ -6,7 +6,9 @@ import { logout } from "../services/api";
 
 export const Header = ({ onCreateEvent }) => {
   const { user, setUser } = useContext(AuthContext);
+  console.log(user);
   const navigate = useNavigate();
+  const link = user && user.isAdmin ? "/eventApplications" : "/myevents";
 
   const handleLogout = async () => {
     await logout();
@@ -38,7 +40,7 @@ export const Header = ({ onCreateEvent }) => {
         <nav className="flex items-center space-x-4">
           {user ? (
             <>
-               <a className="text-white" href="/myevents">Welcome, {user.name}</a> 
+               <a className="text-white" href={link}>Welcome, {user.name}</a> 
 
               
               <button

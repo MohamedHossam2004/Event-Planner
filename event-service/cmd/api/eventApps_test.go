@@ -296,7 +296,6 @@ func TestApplyToEventHandler(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, url, nil)
 			req.SetPathValue("id", tt.eventApp.(struct{ EventID string }).EventID)
 			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOlsiZ2l1LWV2ZW50LWh1Yi5jb20iXSwiZW1haWwiOiJtQG0uY29tIiwiZXhwIjoxNzM0OTc3MjEzLjc2MjA1MywiaWF0IjoxNzM0ODkwODEzLjc2MjA1MiwiaXNBY3RpdmF0ZWQiOmZhbHNlLCJpc0FkbWluIjpmYWxzZSwiaXNzIjoiZ2l1LWV2ZW50LWh1Yi5jb20iLCJuYW1lIjoiTW9oYXJyYW0iLCJuYmYiOjE3MzQ4OTA4MTMuNzYyMDUzLCJzdWIiOiI2NyJ9.6NLXsUH4PxjvpR_OVyZjJElo8mHllaJm4yGPb96Fe0Q")
 
 			rr := httptest.NewRecorder()
 

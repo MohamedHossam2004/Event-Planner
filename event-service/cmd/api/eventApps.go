@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/MohamedHossam2004/Event-Planner/event-service/internal/data"
-	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -87,7 +86,7 @@ func (app *application) getAllEventAppsHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (app *application) getEventAppByIDHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
+	idStr := r.PathValue("id")
 	objID, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID"}, nil)
@@ -105,7 +104,7 @@ func (app *application) getEventAppByIDHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (app *application) deleteEventAppHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
+	idStr := r.PathValue("id")
 	objID, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID"}, nil)
@@ -123,19 +122,18 @@ func (app *application) deleteEventAppHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) applyToEventHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
+	idStr := r.PathValue("id")
 	objID, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID"}, nil)
 		return
 	}
 
-	email, _, _, err := app.extractTokenData(r)
+	email, _, _, err := app.tokenExtractor.extractTokenData(r)
 	if err != nil {
 		app.writeJSON(w, http.StatusUnauthorized, envelope{"error": "Invalid token"}, nil)
 		return
 	}
-
 	eventApp, err := app.models.EventApps.GetEventApp(context.Background(), objID)
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecords) {
@@ -198,14 +196,14 @@ func (app *application) applyToEventHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *application) removeUserEventApplication(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
+	idStr := r.PathValue("id")
 	objID, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.writeJSON(w, http.StatusBadRequest, envelope{"error": "Invalid ID"}, nil)
 		return
 	}
 
-	email, _, _, err := app.extractTokenData(r)
+	email, _, _, err := app.tokenExtractor.extractTokenData(r)
 	if err != nil {
 		app.writeJSON(w, http.StatusUnauthorized, envelope{"error": "Invalid token"}, nil)
 		return
@@ -251,7 +249,7 @@ func (app *application) removeUserEventApplication(w http.ResponseWriter, r *htt
 }
 
 func (app *application) viewAppliedEventsHandler(w http.ResponseWriter, r *http.Request) {
-	email, _, _, err := app.extractTokenData(r)
+	email, _, _, err := app.tokenExtractor.extractTokenData(r)
 	if err != nil {
 		app.writeJSON(w, http.StatusUnauthorized, envelope{"error": "Invalid token"}, nil)
 		return

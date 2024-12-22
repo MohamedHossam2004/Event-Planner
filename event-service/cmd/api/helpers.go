@@ -20,6 +20,14 @@ type payload struct {
 	Data  map[string]any `json:"data"`
 }
 
+type TokenExtractor interface {
+	extractTokenData(r *http.Request) (string, bool, bool, error)
+}
+
+type realTokenExtractor struct {
+	jwtSecret string
+}
+
 func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
@@ -133,7 +141,7 @@ func (app *application) background(fn func()) {
 	}()
 }
 
-func (app *application) extractTokenData(r *http.Request) (string, bool, bool, error) {
+func (rte *realTokenExtractor) extractTokenData(r *http.Request) (string, bool, bool, error) {
 	token := r.Header.Get("Authorization")
 
 	if token == "" {
@@ -142,7 +150,7 @@ func (app *application) extractTokenData(r *http.Request) (string, bool, bool, e
 
 	token = strings.TrimSpace(strings.Replace(token, "Bearer", "", 1))
 
-	claims, err := jwt.HMACCheck([]byte(token), []byte(app.config.jwt.secret))
+	claims, err := jwt.HMACCheck([]byte(token), []byte(rte.jwtSecret))
 	if err != nil {
 		return "", false, false, err
 	}

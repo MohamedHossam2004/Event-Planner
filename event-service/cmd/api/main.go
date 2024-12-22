@@ -33,10 +33,11 @@ type config struct {
 }
 
 type application struct {
-	config config
-	Logger *log.Logger
-	models data.Models
-	Rabbit *amqp.Connection
+	config         config
+	Logger         *log.Logger
+	models         data.Models
+	Rabbit         *amqp.Connection
+	tokenExtractor TokenExtractor
 }
 
 func main() {
@@ -72,6 +73,9 @@ func main() {
 		Logger: logger,
 		models: data.NewModels(db),
 		Rabbit: rabbitConn,
+		tokenExtractor: &realTokenExtractor{
+			jwtSecret: cfg.jwt.secret,
+		},
 	}
 
 	// Log the server start

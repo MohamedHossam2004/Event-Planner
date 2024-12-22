@@ -74,7 +74,7 @@ func (s *EventAppModel) GetEventApp(ctx context.Context, id primitive.ObjectID) 
 		if err == mongo.ErrNoDocuments {
 			return nil, ErrNoRecords
 		}
-		return nil, err
+		return &EventApps{}, err
 	}
 	return &eventApp, nil
 }

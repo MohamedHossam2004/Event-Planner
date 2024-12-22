@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/MohamedHossam2004/Event-Planner/event-service/internal/data"
-	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -26,7 +25,7 @@ func (app *application) getAllEventsHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *application) getEventByIDHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
+	idStr := r.PathValue("id")
 
 	id, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
@@ -108,7 +107,7 @@ func (app *application) createEventHandler(w http.ResponseWriter, r *http.Reques
 func (app *application) updateEventHandler(w http.ResponseWriter, r *http.Request) {
 	app.Logger.Println("UpdateEvent called")
 
-	idStr := chi.URLParam(r, "id")
+	idStr := r.PathValue("id")
 	id, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		app.Logger.Printf("Invalid ID format: %v", err)
@@ -167,7 +166,7 @@ func (app *application) updateEventHandler(w http.ResponseWriter, r *http.Reques
 
 func (app *application) deleteEventHandler(w http.ResponseWriter, r *http.Request) {
 	app.Logger.Println("DeleteEvent called")
-	idStr := chi.URLParam(r, "id")
+	idStr := r.PathValue("id")
 
 	id, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {

@@ -39,6 +39,7 @@ func (app *application) routes() http.Handler {
 	mux.Put("/v1/events/{id}", app.updateEventHandler)
 	mux.Delete("/v1/events/{id}", app.deleteEventHandler)
 	mux.Post("/v1/events/{id}/apply", app.applyToEventHandler)
+	mux.Get("/v1/events/user", app.viewAppliedEventsHandler)
 
 	mux.Get("/v1/eventApps", app.getAllEventAppsHandler)
 	mux.Get("/v1/eventApps/{id}", app.getEventAppByIDHandler)

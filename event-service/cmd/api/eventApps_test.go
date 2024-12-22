@@ -72,113 +72,10 @@ func (m *MockTokenExtractor) extractTokenData(r *http.Request) (string, bool, bo
 	return args.String(0), args.Bool(1), args.Bool(2), args.Error(3)
 }
 
-// func TestCreateEventAppHandler(t *testing.T) {
-// 	mockEventAppModel := new(MockEventAppModel)
-// 	mockEventModel := new(MockEventModel)
-
-// 	rabbitConn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-// 	if err != nil {
-// 		t.Fatalf("Failed to connect to RabbitMQ: %v", err)
-// 	}
-
-// 	app := &application{
-// 		Logger: log.New(io.Discard, "", 0),
-// 		config: config{port: "80", env: "development"},
-// 		models: data.Models{
-// 			EventApps: mockEventAppModel,
-// 			Event:     mockEventModel,
-// 		},
-// 		Rabbit: rabbitConn,
-// 	}
-
-// 	tests := []struct {
-// 		name           string
-// 		eventApp       interface{}
-// 		expectedStatus int
-// 		setupMock      func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel)
-// 	}{
-// 		{
-// 			name: "CreateEventApp Returns Error",
-// 			eventApp: struct {
-// 				ID       primitive.ObjectID
-// 				EventID  primitive.ObjectID
-// 				Attendee []string
-// 			}{
-// 				ID:       primitive.NewObjectID(),
-// 				EventID:  primitive.NewObjectID(),
-// 				Attendee: []string{"user1", "user2"},
-// 			},
-// 			expectedStatus: http.StatusInternalServerError,
-// 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel) {
-// 				mockEventAppModel.On("CreateEventApp", mock.Anything, mock.AnythingOfType("*data.EventApps")).Return(errors.New("database error"))
-// 			},
-// 		},
-// 		{
-// 			name: "Valid Event App",
-// 			eventApp: struct {
-// 				ID       primitive.ObjectID
-// 				EventID  primitive.ObjectID
-// 				Attendee []string
-// 			}{
-// 				ID:       primitive.NewObjectID(),
-// 				EventID:  primitive.NewObjectID(),
-// 				Attendee: []string{"user1", "user2"},
-// 			},
-// 			expectedStatus: http.StatusCreated,
-// 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel) {
-// 				mockEventAppModel.On("CreateEventApp", mock.Anything, mock.AnythingOfType("*data.EventApps")).Return(nil)
-// 				mockEventModel.On("GetEventByID", mock.AnythingOfType("primitive.ObjectID")).Return(&data.Event{Name: "Test Event"}, nil)
-// 			},
-// 		},
-// 		{
-// 			name: "Missing Event ID",
-// 			eventApp: struct {
-// 				ID       primitive.ObjectID
-// 				Attendee []string
-// 			}{
-// 				ID:       primitive.NewObjectID(),
-// 				Attendee: []string{"user1", "user2"},
-// 			},
-// 			expectedStatus: http.StatusBadRequest,
-// 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel) {
-// 			},
-// 		},
-// 	}
-
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			mockEventAppModel := new(MockEventAppModel)
-// 			mockEventModel := new(MockEventModel)
-
-// 			app.models = data.Models{
-// 				EventApps: mockEventAppModel,
-// 				Event:     mockEventModel,
-// 			}
-
-// 			tt.setupMock(mockEventAppModel, mockEventModel)
-
-// 			eventAppJSON, _ := json.Marshal(tt.eventApp)
-
-// 			req := httptest.NewRequest(http.MethodPost, "/v1/eventapps", bytes.NewBuffer(eventAppJSON))
-// 			req.Header.Set("Content-Type", "application/json")
-
-// 			rr := httptest.NewRecorder()
-
-// 			handler := http.HandlerFunc(app.createEventAppHandler)
-// 			handler.ServeHTTP(rr, req)
-
-// 			assert.Equal(t, tt.expectedStatus, rr.Code)
-
-// 			mockEventAppModel.AssertExpectations(t)
-// 			mockEventModel.AssertExpectations(t)
-// 		})
-// 	}
-// }
-
 func TestApplyToEventHandler(t *testing.T) {
 	mockEventAppModel := new(MockEventAppModel)
 	mockEventModel := new(MockEventModel)
-	mockTokenExtractor := new(MockTokenExtractor) // Mock token extractor
+	mockTokenExtractor := new(MockTokenExtractor)
 
 	rabbitConn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
@@ -193,7 +90,7 @@ func TestApplyToEventHandler(t *testing.T) {
 			Event:     mockEventModel,
 		},
 		Rabbit:         rabbitConn,
-		tokenExtractor: mockTokenExtractor, // Use the mock token extractor here
+		tokenExtractor: mockTokenExtractor,
 	}
 
 	tests := []struct {
@@ -213,8 +110,8 @@ func TestApplyToEventHandler(t *testing.T) {
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   `{"error":"Event app not found"}`,
 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
-				mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)                                       // Mock successful token extraction
-				mockEventAppModel.On("GetEventApp", mock.Anything, mock.AnythingOfType("primitive.ObjectID")).Return(&data.EventApps{}, data.ErrNoRecords) // Simulate event app not found
+				mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)
+				mockEventAppModel.On("GetEventApp", mock.Anything, mock.AnythingOfType("primitive.ObjectID")).Return(&data.EventApps{}, data.ErrNoRecords)
 			},
 		},
 		{
@@ -227,7 +124,7 @@ func TestApplyToEventHandler(t *testing.T) {
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   `{"error":"Invalid token"}`,
 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
-				mockTokenExtractor.On("extractTokenData", mock.Anything).Return("", false, false, errors.New("Invalid token")) // Simulate invalid token
+				mockTokenExtractor.On("extractTokenData", mock.Anything).Return("", false, false, errors.New("Invalid token"))
 			},
 		},
 		{
@@ -241,7 +138,7 @@ func TestApplyToEventHandler(t *testing.T) {
 			expectedBody:   `{"error":"You already applied to this event"}`,
 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
 				mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)
-				mockEventAppModel.On("GetEventApp", mock.Anything, mock.AnythingOfType("primitive.ObjectID")).Return(&data.EventApps{Attendee: []string{"test@example.com"}}, nil) // Simulate the user already applied
+				mockEventAppModel.On("GetEventApp", mock.Anything, mock.AnythingOfType("primitive.ObjectID")).Return(&data.EventApps{Attendee: []string{"test@example.com"}}, nil)
 			},
 		},
 		{
@@ -254,10 +151,10 @@ func TestApplyToEventHandler(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedBody:   `{"message":"Applied to event successfully"}`,
 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
-				mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)                                                                                                                                                                             // Mock successful token extraction
-				mockEventAppModel.On("GetEventApp", mock.Anything, mock.AnythingOfType("primitive.ObjectID")).Return(&data.EventApps{Attendee: []string{}}, nil)                                                                                                                                 // Simulate no prior event application
-				mockEventModel.On("GetEventByID", mock.AnythingOfType("primitive.ObjectID")).Return(&data.Event{Name: "Test Event", Date: time.Now().Add(1 * time.Hour), Location: data.Location{Address: "123 Test St", City: "Test City", State: "Test State", Country: "Test Country"}}, nil) // Simulate a valid event
-				mockEventAppModel.On("AddAttendeeToEvent", "test@example.com", mock.AnythingOfType("primitive.ObjectID")).Return(nil)                                                                                                                                                            // Simulate adding attendee to event
+				mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)
+				mockEventAppModel.On("GetEventApp", mock.Anything, mock.AnythingOfType("primitive.ObjectID")).Return(&data.EventApps{Attendee: []string{}}, nil)
+				mockEventModel.On("GetEventByID", mock.AnythingOfType("primitive.ObjectID")).Return(&data.Event{Name: "Test Event", Date: time.Now().Add(1 * time.Hour), Location: data.Location{Address: "123 Test St", City: "Test City", State: "Test State", Country: "Test Country"}}, nil)
+				mockEventAppModel.On("AddAttendeeToEvent", "test@example.com", mock.AnythingOfType("primitive.ObjectID")).Return(nil)
 				mockEventAppModel.On("AddAttendeeToEvent", mock.Anything, mock.Anything).Return(nil)
 			},
 		},
@@ -271,9 +168,9 @@ func TestApplyToEventHandler(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   `{"error":"Event has ended"}`,
 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
-				mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)                                                                                                                                                                              // Mock successful token extraction
-				mockEventAppModel.On("GetEventApp", mock.Anything, mock.AnythingOfType("primitive.ObjectID")).Return(&data.EventApps{Attendee: []string{}}, nil)                                                                                                                                  // Simulate no prior event application
-				mockEventModel.On("GetEventByID", mock.AnythingOfType("primitive.ObjectID")).Return(&data.Event{Name: "Test Event", Date: time.Now().Add(-1 * time.Hour), Location: data.Location{Address: "123 Test St", City: "Test City", State: "Test State", Country: "Test Country"}}, nil) // Simulate past event
+				mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)
+				mockEventAppModel.On("GetEventApp", mock.Anything, mock.AnythingOfType("primitive.ObjectID")).Return(&data.EventApps{Attendee: []string{}}, nil)
+				mockEventModel.On("GetEventByID", mock.AnythingOfType("primitive.ObjectID")).Return(&data.Event{Name: "Test Event", Date: time.Now().Add(-1 * time.Hour), Location: data.Location{Address: "123 Test St", City: "Test City", State: "Test State", Country: "Test Country"}}, nil)
 			},
 		},
 	}

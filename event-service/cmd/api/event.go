@@ -122,7 +122,7 @@ func (app *application) updateEventHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	updatedEvent, err := app.models.Event.UpdateEvent(id, &event)
+	_, err = app.models.Event.UpdateEvent(id, &event)
 	if err != nil {
 		app.Logger.Printf("Error updating event: %v", err)
 		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to update event"}, nil)
@@ -161,7 +161,7 @@ func (app *application) updateEventHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	app.writeJSON(w, http.StatusOK, envelope{"event": updatedEvent}, nil)
+	app.writeJSON(w, http.StatusOK, envelope{"message":"Success"}, nil)
 }
 
 func (app *application) deleteEventHandler(w http.ResponseWriter, r *http.Request) {

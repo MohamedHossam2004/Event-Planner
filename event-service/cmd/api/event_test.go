@@ -47,6 +47,164 @@ func (m *MockEventModel) GetAllEvents() ([]data.Event, error) {
 	return args.Get(0).([]data.Event), args.Error(1)
 }
 
+func TestGetEventByID(t *testing.T) {
+	mockEventAppModel := new(MockEventAppModel)
+	mockEventModel := new(MockEventModel)
+	mockTokenExtractor := new(MockTokenExtractor)
+
+	rabbitConn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	if err != nil {
+		t.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
+
+	app := &application{
+		Logger: log.New(os.Stdout, "", 0),
+		config: config{port: "80", env: "development"},
+		models: data.Models{
+			EventApps: mockEventAppModel,
+			Event:     mockEventModel,
+		},
+		Rabbit:         rabbitConn,
+		tokenExtractor: mockTokenExtractor,
+	}
+
+	tests := []struct {
+		name           string
+		event       interface{}
+		expectedStatus int
+		expectedBody   string
+		setupMock      func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor)
+	}{
+		{
+			name: "Valid get event by ID",
+			event: struct {
+				EventID string
+			}{
+				EventID: "67473b35332e9a9361e03fef",
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody: `{
+				"event": {
+					"_id": "67473b35332e9a9361e03fef",
+					"created_at": "2024-11-27T15:31:01.393Z",
+					"date": "2024-07-15T18:00:00Z",
+					"description": "",
+					"location": {
+						"address": "123 Main Street",
+						"city": "San Francisco",
+						"country": "USA",
+						"state": "CA"
+					},
+					"max_capacity": 1000,
+					"min_capacity": 100,
+					"name": "Tech Conference 2024",
+					"number_of_applications": 0,
+					"organizers": [
+						{
+							"email": "john.doe@example.com",
+							"id": "000000000000000000000000",
+							"name": "John Doe",
+							"phone": "123-456-7890",
+							"role": "Lead Organizer"
+						}
+					],
+					"status": "PENDING",
+					"type": "CONFERENCE",
+					"updated_at": "2024-11-27T15:31:01.393Z",
+					"ushers": [
+						"Alice Smith",
+						"Bob Johnson"
+					]
+				}
+			}`,
+			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
+				id, _ := primitive.ObjectIDFromHex("67473b35332e9a9361e03fef")
+				organizerId, _ := primitive.ObjectIDFromHex("000000000000000000000000")
+				createdAt, _ := time.Parse(time.RFC3339, "2024-11-27T15:31:01.393Z")
+				date, _ := time.Parse(time.RFC3339, "2024-07-15T18:00:00Z")
+				updatedAt, _ := time.Parse(time.RFC3339, "2024-11-27T15:31:01.393Z")
+				mockEventModel.On("GetEventByID", mock.AnythingOfType("primitive.ObjectID")).Return(&data.Event{
+					ID:                 id,
+					CreatedAt:          createdAt,
+					Date:               date,
+					Description:        "",
+					Location:           data.Location{
+						Address: "123 Main Street",
+						City:    "San Francisco",
+						Country: "USA",
+						State:   "CA",
+					},
+					MaxCapacity:        1000,
+					MinCapacity:        100,
+					Name:               "Tech Conference 2024",
+					NumberOfApplications: 0,
+					Organizers: []data.Organizer{
+						{
+							Email: "john.doe@example.com",
+							ID:    organizerId,
+							Name:  "John Doe",
+							Phone: "123-456-7890",
+							Role:  "Lead Organizer",
+						},
+					},
+					Status:    "PENDING",
+					Type:      "CONFERENCE",
+					UpdatedAt: updatedAt,
+					Ushers:    []string{"Alice Smith", "Bob Johnson"},
+				}, nil)
+			},
+		},
+		{
+			name: "Event not found",
+			event: struct {
+				EventID string
+			}{
+				EventID: "67473b35332e9a9361e03fef",
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   `{"error": "Failed to fetch event"}`,
+			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
+				mockEventModel.On("GetEventByID", mock.AnythingOfType("primitive.ObjectID")).Return(&data.Event{}, errors.New("Failed to fetch event"))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockEventAppModel := new(MockEventAppModel)
+			mockEventModel := new(MockEventModel)
+			mockTokenExtractor := new(MockTokenExtractor)
+	
+			app.models = data.Models{
+				EventApps: mockEventAppModel,
+				Event:     mockEventModel,
+			}
+			app.tokenExtractor = mockTokenExtractor
+	
+			tt.setupMock(mockEventAppModel, mockEventModel, mockTokenExtractor)
+	
+			url := "/v1/events/{id}"
+	
+			req := httptest.NewRequest(http.MethodGet, url, nil)
+			req.SetPathValue("id", tt.event.(struct{ EventID string }).EventID)
+			req.Header.Set("Content-Type", "application/json")
+	
+			rr := httptest.NewRecorder()
+	
+			handler := http.HandlerFunc(app.getEventByIDHandler)
+			handler.ServeHTTP(rr, req)
+	
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+			assert.JSONEq(t, tt.expectedBody, rr.Body.String())
+	
+			mockEventAppModel.AssertExpectations(t)
+			mockEventModel.AssertExpectations(t)
+			mockTokenExtractor.AssertExpectations(t)
+		})
+	}
+}
+
+
 func TestCreateEvent(t *testing.T) {
 	mockEventAppModel := new(MockEventAppModel)
 	mockEventModel := new(MockEventModel)

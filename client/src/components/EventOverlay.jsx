@@ -27,7 +27,7 @@ export const EventOverlay = ({ event, onClose }) => {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white hover:bg-gray-100 transition-colors z-10"
+          className="absolute top-4 right-4 p-2 rounded-full bg-white hover:bg-gray-100 transition-colors z-10 close-button"
           aria-label="Close"
         >
           <X className="h-6 w-6 text-gray-600" />
@@ -104,7 +104,7 @@ export const EventOverlay = ({ event, onClose }) => {
               {/* Action Buttons */}
               <div className="space-y-3">
                 <button
-                  className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                  className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium event-register"
                   onClick={() => onRegisterClick(event._id)}
                 >
                   Register Now

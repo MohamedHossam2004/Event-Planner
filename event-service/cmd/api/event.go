@@ -178,7 +178,7 @@ func (app *application) deleteEventHandler(w http.ResponseWriter, r *http.Reques
 	event, err := app.models.Event.GetEventByID(id)
 	if err != nil {
 		app.Logger.Printf("Error fetching event by ID: %v", err)
-		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to fetch event"}, nil)
+		app.writeJSON(w, http.StatusNotFound, envelope{"error": "Failed to fetch event"}, nil)
 		return
 	}
 	if event != nil {

@@ -5,7 +5,7 @@ import { formatDate, formatTime } from "../services/helpers";
 export const EventCard = ({ event, onSelect }) => {
   return (
     <div
-      className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer event-card"
       onClick={() => onSelect(event)}
     >
       <img

@@ -4,23 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/MohamedHossam2004/Event-Planner/event-service/internal/data"
-	
-	"github.com/stretchr/testify/assert"
+
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	
-
-	
 )
 
 type MockEventModel struct {
@@ -40,7 +36,7 @@ func (m *MockEventModel) CreateEvent(event *data.Event) (*data.Event, error) {
 func (m *MockEventModel) UpdateEvent(id primitive.ObjectID, event *data.Event) (*data.Event, error) {
 	args := m.Called(id, event)
 	return args.Get(0).(*data.Event), args.Error(1)
-	
+
 }
 
 func (m *MockEventModel) DeleteEvent(id primitive.ObjectID) error {
@@ -64,7 +60,7 @@ func TestGetEventByID(t *testing.T) {
 	}
 
 	app := &application{
-		Logger: log.New(os.Stdout, "", 0),
+		Logger: log.New(io.Discard, "", 0),
 		config: config{port: "80", env: "development"},
 		models: data.Models{
 			EventApps: mockEventAppModel,
@@ -76,7 +72,7 @@ func TestGetEventByID(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		event       interface{}
+		event          interface{}
 		expectedStatus int
 		expectedBody   string
 		setupMock      func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor)
@@ -130,19 +126,19 @@ func TestGetEventByID(t *testing.T) {
 				date, _ := time.Parse(time.RFC3339, "2024-07-15T18:00:00Z")
 				updatedAt, _ := time.Parse(time.RFC3339, "2024-11-27T15:31:01.393Z")
 				mockEventModel.On("GetEventByID", mock.AnythingOfType("primitive.ObjectID")).Return(&data.Event{
-					ID:                 id,
-					CreatedAt:          createdAt,
-					Date:               date,
-					Description:        "",
-					Location:           data.Location{
+					ID:          id,
+					CreatedAt:   createdAt,
+					Date:        date,
+					Description: "",
+					Location: data.Location{
 						Address: "123 Main Street",
 						City:    "San Francisco",
 						Country: "USA",
 						State:   "CA",
 					},
-					MaxCapacity:        1000,
-					MinCapacity:        100,
-					Name:               "Tech Conference 2024",
+					MaxCapacity:          1000,
+					MinCapacity:          100,
+					Name:                 "Tech Conference 2024",
 					NumberOfApplications: 0,
 					Organizers: []data.Organizer{
 						{
@@ -180,36 +176,35 @@ func TestGetEventByID(t *testing.T) {
 			mockEventAppModel := new(MockEventAppModel)
 			mockEventModel := new(MockEventModel)
 			mockTokenExtractor := new(MockTokenExtractor)
-	
+
 			app.models = data.Models{
 				EventApps: mockEventAppModel,
 				Event:     mockEventModel,
 			}
 			app.tokenExtractor = mockTokenExtractor
-	
+
 			tt.setupMock(mockEventAppModel, mockEventModel, mockTokenExtractor)
-	
+
 			url := "/v1/events/{id}"
-	
+
 			req := httptest.NewRequest(http.MethodGet, url, nil)
 			req.SetPathValue("id", tt.event.(struct{ EventID string }).EventID)
 			req.Header.Set("Content-Type", "application/json")
-	
+
 			rr := httptest.NewRecorder()
-	
+
 			handler := http.HandlerFunc(app.getEventByIDHandler)
 			handler.ServeHTTP(rr, req)
-	
+
 			assert.Equal(t, tt.expectedStatus, rr.Code)
 			assert.JSONEq(t, tt.expectedBody, rr.Body.String())
-	
+
 			mockEventAppModel.AssertExpectations(t)
 			mockEventModel.AssertExpectations(t)
 			mockTokenExtractor.AssertExpectations(t)
 		})
 	}
 }
-
 
 func TestCreateEvent(t *testing.T) {
 	mockEventAppModel := new(MockEventAppModel)
@@ -222,7 +217,7 @@ func TestCreateEvent(t *testing.T) {
 	}
 
 	app := &application{
-		Logger: log.New(os.Stdout, "", 0),
+		Logger: log.New(io.Discard, "", 0),
 		config: config{port: "80", env: "development"},
 		models: data.Models{
 			EventApps: mockEventAppModel,
@@ -407,7 +402,7 @@ func TestDeleteEvent(t *testing.T) {
 	}
 
 	app := &application{
-		Logger: log.New(os.Stdout, "", 0),
+		Logger: log.New(io.Discard, "", 0),
 		config: config{port: "80", env: "development"},
 		models: data.Models{
 			EventApps: mockEventAppModel,
@@ -530,7 +525,7 @@ func TestUpdateEventHandler(t *testing.T) {
 	}
 
 	app := &application{
-		Logger: log.New(os.Stdout, "", 0),
+		Logger: log.New(io.Discard, "", 0),
 		config: config{port: "80", env: "development"},
 		models: data.Models{
 			EventApps: mockEventAppModel,
@@ -550,7 +545,7 @@ func TestUpdateEventHandler(t *testing.T) {
 	}{
 		{
 			name:    "Successful Event Update",
-			eventId:  primitive.NewObjectID().Hex(),
+			eventId: primitive.NewObjectID().Hex(),
 			eventData: data.Event{
 				ID:   primitive.NewObjectID(),
 				Date: time.Date(2025, 7, 15, 18, 0, 0, 0, time.UTC),
@@ -580,8 +575,8 @@ func TestUpdateEventHandler(t *testing.T) {
 				Status:    "Open",
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:`{"message":"Success"}`,
-			
+			expectedBody:   `{"message":"Success"}`,
+
 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
 				// mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)
 				mockEventModel.On("UpdateEvent", mock.AnythingOfType("primitive.ObjectID"), mock.Anything).Return(&data.Event{}, nil)
@@ -590,7 +585,7 @@ func TestUpdateEventHandler(t *testing.T) {
 		},
 		{
 			name:    "Invalid Id format",
-			eventId:  "",
+			eventId: "",
 			eventData: data.Event{
 				ID:   primitive.NewObjectID(),
 				Date: time.Date(2025, 7, 15, 18, 0, 0, 0, time.UTC),
@@ -620,15 +615,15 @@ func TestUpdateEventHandler(t *testing.T) {
 				Status:    "Open",
 			},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:`{"error": "Invalid ID format"}`,
-			
+			expectedBody:   `{"error": "Invalid ID format"}`,
+
 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
-				
+
 			},
 		},
 		{
 			name:    "Error Updating Event",
-			eventId:  primitive.NewObjectID().Hex(),
+			eventId: primitive.NewObjectID().Hex(),
 			eventData: data.Event{
 				ID:   primitive.NewObjectID(),
 				Date: time.Date(2025, 7, 15, 18, 0, 0, 0, time.UTC),
@@ -658,17 +653,17 @@ func TestUpdateEventHandler(t *testing.T) {
 				Status:    "Open",
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:`{"error": "Failed to update event"}`,
-			
+			expectedBody:   `{"error": "Failed to update event"}`,
+
 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
 				// mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)
 				mockEventModel.On("UpdateEvent", mock.AnythingOfType("primitive.ObjectID"), mock.AnythingOfType("*data.Event")).Return(&data.Event{}, errors.New("ERROR"))
-				
+
 			},
 		},
 		{
 			name:    "Error fetching event apps",
-			eventId:  primitive.NewObjectID().Hex(),
+			eventId: primitive.NewObjectID().Hex(),
 			eventData: data.Event{
 				ID:   primitive.NewObjectID(),
 				Date: time.Date(2025, 7, 15, 18, 0, 0, 0, time.UTC),
@@ -698,13 +693,13 @@ func TestUpdateEventHandler(t *testing.T) {
 				Status:    "Open",
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:`{"error": "the server encountered a problem and could not process your request"}`,
-			
+			expectedBody:   `{"error": "the server encountered a problem and could not process your request"}`,
+
 			setupMock: func(mockEventAppModel *MockEventAppModel, mockEventModel *MockEventModel, mockTokenExtractor *MockTokenExtractor) {
-			// mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)
-				mockEventModel.On("UpdateEvent", mock.AnythingOfType("primitive.ObjectID"), mock.AnythingOfType("*data.Event")).Return(&data.Event{},nil)
+				// mockTokenExtractor.On("extractTokenData", mock.Anything).Return("test@example.com", true, true, nil)
+				mockEventModel.On("UpdateEvent", mock.AnythingOfType("primitive.ObjectID"), mock.AnythingOfType("*data.Event")).Return(&data.Event{}, nil)
 				mockEventAppModel.On("GetEventApp", mock.Anything, mock.AnythingOfType("primitive.ObjectID")).Return(&data.EventApps{}, data.ErrNoRecords)
-				
+
 			},
 		},
 	}
@@ -723,16 +718,11 @@ func TestUpdateEventHandler(t *testing.T) {
 
 			tt.setupMock(mockEventAppModel, mockEventModel, mockTokenExtractor)
 
-
-
-			
-			url:="/v1/events/{id}"
+			url := "/v1/events/{id}"
 			reqBody, _ := json.Marshal(tt.eventData)
-			req := httptest.NewRequest(http.MethodPut, url,  bytes.NewBuffer(reqBody))
+			req := httptest.NewRequest(http.MethodPut, url, bytes.NewBuffer(reqBody))
 			req.SetPathValue("id", tt.eventId)
-			
-			
-			
+
 			req.Header.Set("Content-Type", "application/json")
 
 			rr := httptest.NewRecorder()
@@ -752,9 +742,3 @@ func TestUpdateEventHandler(t *testing.T) {
 		})
 	}
 }
-
-
-
-
-
-

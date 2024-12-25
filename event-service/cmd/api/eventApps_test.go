@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
-	
+
 	"github.com/MohamedHossam2004/Event-Planner/event-service/internal/data"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/stretchr/testify/assert"
@@ -83,7 +83,7 @@ func TestApplyToEventHandler(t *testing.T) {
 	}
 
 	app := &application{
-		Logger: log.New(os.Stdout, "", 0),
+		Logger: log.New(io.Discard, "", 0),
 		config: config{port: "80", env: "development"},
 		models: data.Models{
 			EventApps: mockEventAppModel,

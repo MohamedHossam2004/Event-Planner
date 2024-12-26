@@ -37,7 +37,9 @@ export const EventCard = ({ event, onSelect }) => {
         <div className="mt-6 flex items-center justify-between">
           <div className="flex items-center gap-1 text-gray-600">
             <Users size={18} />
-            <span>{event.number_of_applications} spots left</span>
+            <span>
+              {event.max_capacity - event.number_of_applications} spots left
+            </span>
           </div>
           <button
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"

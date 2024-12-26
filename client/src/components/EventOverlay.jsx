@@ -17,8 +17,8 @@ export const EventOverlay = ({ event, onClose }) => {
 
   if (!event) return null;
 
-  const totalSpots = 500; // Example total capacity
-  const availableSpots = event.number_of_applications;
+  const totalSpots = event.max_capacity;
+  const availableSpots = totalSpots - event.number_of_applications;
   const progressPercentage = (availableSpots / totalSpots) * 100;
 
   return (

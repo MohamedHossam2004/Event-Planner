@@ -1,20 +1,27 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Search, CalendarPlus } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
 import { logout } from "../services/api";
 
-export const Header = ({ onCreateEvent }) => {
+export const Header = ({ onCreateEvent, setEvents }) => {
   const { user, setUser } = useContext(AuthContext);
-  console.log(user);
   const navigate = useNavigate();
   const link = user && user.isAdmin ? "/eventApplications" : "/myevents";
+  const [username, setUsername] = useState(null);
 
   const handleLogout = async () => {
     await logout();
     setUser(null);
+    setUsername(null);
     navigate("/");
   };
+
+  useEffect(() => {
+    if (user) {
+      setUsername(user.name);
+    }
+  }, [user]);
 
   return (
     <header className="bg-gradient-to-r from-purple-600 to-blue-600 p-4">
@@ -38,11 +45,12 @@ export const Header = ({ onCreateEvent }) => {
         </div>
 
         <nav className="flex items-center space-x-4">
-          {user ? (
+          {username ? (
             <>
-               <a className="text-white" href={link}>Welcome, {user.name}</a> 
+              <a className="text-white" href={link}>
+                Welcome, {username}
+              </a>
 
-              
               <button
                 onClick={handleLogout}
                 className="text-white hover:text-purple-200"

@@ -5,8 +5,7 @@ import { EventList } from "../components/EventList";
 import { EventOverlay } from "../components/EventOverlay";
 import { getEvents } from "../services/api";
 
-export const HeroPage = () => {
-  const [events, setEvents] = useState([]);
+export const HeroPage = ({ events, setEvents }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -26,17 +25,14 @@ export const HeroPage = () => {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      
-        const data = await getEvents();
-        if(data.events !=null){
-          setEvents(data.events);
-          console.error(events)
-          setLoading(false);
-         }
-         else{
-          setError("Failed to fetch events. Please try again later.");
-          setLoading(false);
-         }
+      const data = await getEvents();
+      if (data.events != null) {
+        setEvents(data.events);
+        setLoading(false);
+      } else {
+        setError("Failed to fetch events. Please try again later.");
+        setLoading(false);
+      }
     };
 
     fetchEvents();
@@ -71,8 +67,12 @@ export const HeroPage = () => {
       ) : error ? (
         <div className="text-center py-12 text-red-600">{error}</div>
       ) : (
-         events && <EventList events={filteredEvents} onEventSelect={handleEventSelect} />
-         
+        events && (
+          <EventList
+            events={filteredEvents}
+            onEventSelect={handleEventSelect}
+          />
+        )
       )}
 
       {selectedEvent && (

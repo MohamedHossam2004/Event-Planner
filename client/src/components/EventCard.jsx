@@ -1,4 +1,3 @@
-import React from "react";
 import { MapPin, Clock, Users, Calendar } from "lucide-react";
 import { formatDate, formatTime } from "../services/helpers";
 

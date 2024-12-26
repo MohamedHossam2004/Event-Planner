@@ -12,7 +12,7 @@ import EventApplications from "./components/eventApplications";
 
 function App() {
   const [showCreateEventOverlay, setShowCreateEventOverlay] = useState(false);
-
+  const [events, setEvents] = useState([]);
   const handleCreateEvent = () => {
     setShowCreateEventOverlay(true);
   };
@@ -25,14 +25,17 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="min-h-screen bg-gray-50">
-          <Header onCreateEvent={handleCreateEvent} />
+          <Header onCreateEvent={handleCreateEvent} setEvents={setEvents} />
 
           <Routes>
-            <Route path="/" element={<HeroPage />} />
+            <Route
+              path="/"
+              element={<HeroPage events={events} setEvents={setEvents} />}
+            />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-             <Route path="/myevents" element={<MyEvents />} /> 
-             <Route path="/eventApplications" element={<EventApplications />} />
+            <Route path="/myevents" element={<MyEvents />} />
+            <Route path="/eventApplications" element={<EventApplications />} />
           </Routes>
 
           <footer className="bg-white border-t mt-16 py-8">
@@ -46,7 +49,11 @@ function App() {
           </footer>
 
           {showCreateEventOverlay && (
-            <CreateEventOverlay onClose={handleCloseCreateEventOverlay} />
+            <CreateEventOverlay
+              onClose={handleCloseCreateEventOverlay}
+              events={events}
+              setEvents={setEvents}
+            />
           )}
         </div>
       </Router>

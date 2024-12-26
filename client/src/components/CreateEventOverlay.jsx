@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { createEvent } from "../services/api";
 
-export const CreateEventOverlay = ({ onClose }) => {
+export const CreateEventOverlay = ({ onClose, events, setEvents }) => {
   const [eventData, setEventData] = useState({
     name: "",
     type: "",
@@ -42,13 +42,17 @@ export const CreateEventOverlay = ({ onClose }) => {
     const dataToSend = {
       ...eventData,
       date: formattedEventTime,
-      number_of_applications: parseInt(eventData.number_of_applications, 10),
+      number_of_applications: Number.parseInt(
+        eventData.number_of_applications,
+        10,
+      ),
     };
     console.log("Data to be sent:", dataToSend);
     try {
-      await createEvent(dataToSend);
+      console.log(events);
+      const event = await createEvent(dataToSend);
+      setEvents((prev) => [event.event, ...prev]);
       onClose();
-      window.location.reload();
     } catch (error) {
       console.error("Failed to create event:", error);
     }

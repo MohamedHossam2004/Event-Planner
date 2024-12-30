@@ -223,3 +223,44 @@ func (app *application) deleteEventHandler(w http.ResponseWriter, r *http.Reques
 
 	app.writeJSON(w, http.StatusOK, envelope{"message": "Event deleted successfully"}, nil)
 }
+
+func (app *application) viewUnsubscribedEventsHandler(w http.ResponseWriter, r *http.Request) {
+	email, _, _, err := app.tokenExtractor.extractTokenData(r)
+	if err != nil {
+		app.Logger.Printf("Error extracting token data: %v", err)
+		app.writeJSON(w, http.StatusUnauthorized, envelope{"error": "Unauthorized"}, nil)
+		return
+	}
+	subscribedEvents, err := app.models.EventApps.GetEventsByUserEmail(email)
+	if err != nil {
+		app.Logger.Printf("Error fetching subscribed events: %v", err)
+		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to fetch subscribed events"}, nil)
+		return
+	}
+
+	// Create a set of subscribed event IDs for quick lookup
+	subscribedEventIDs := make(map[primitive.ObjectID]struct{})
+	for _, event := range subscribedEvents {
+		subscribedEventIDs[event.ID] = struct{}{}
+	}
+	allEvents, err := app.models.Event.GetAllEvents()
+	if err != nil {
+		app.Logger.Printf("Error fetching all events: %v", err)
+		app.writeJSON(w, http.StatusInternalServerError, envelope{"error": "Failed to fetch events"}, nil)
+		return
+	}
+	// Filter out subscribed events to get unsubscribed events
+	var unsubscribedEvents []data.Event
+	for _, event := range allEvents {
+		if _, exists := subscribedEventIDs[event.ID]; !exists {
+			unsubscribedEvents = append(unsubscribedEvents, event)
+		}
+	}
+	
+	err = app.writeJSON(w, http.StatusOK, envelope{"unsubscribed_events": unsubscribedEvents}, nil)
+	if err != nil {
+		app.Logger.Printf("Error writing JSON response: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+

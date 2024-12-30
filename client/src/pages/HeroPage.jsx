@@ -1,15 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect,useContext } from "react";
 import { Stats } from "../components/Stats";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { EventList } from "../components/EventList";
 import { EventOverlay } from "../components/EventOverlay";
-import { getEvents } from "../services/api";
+import { getEvents, getUnsubedEvents } from "../services/api";
+import { subscribeMailingList} from "../services/api";
+import { AuthContext } from "../contexts/AuthContext";
 
 export const HeroPage = ({ events, setEvents }) => {
+  const { user, setUser } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState(""); // "success" or "error"
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
@@ -23,9 +28,28 @@ export const HeroPage = ({ events, setEvents }) => {
     setSelectedEvent(null);
   };
 
+  const handleSubscribe = async (category) => {
+    if (category === "All") {
+      category = "general";
+    }
+    try {
+      const response = await subscribeMailingList(category);
+      setMessage(response.message);
+      setMessageType("success"); // Set message type as success
+    } catch (error) {
+      setMessage(error.response.message)
+      setMessageType("error"); // Set message type as error
+    }
+  };
+
   useEffect(() => {
     const fetchEvents = async () => {
-      const data = await getEvents();
+
+      
+
+      //console.log(user.isAdmin)
+      if(user&&user.isAdmin){
+       const data = await getEvents();
       if (data.events != null) {
         setEvents(data.events);
         setLoading(false);
@@ -33,11 +57,27 @@ export const HeroPage = ({ events, setEvents }) => {
         setError("Failed to fetch events. Please try again later.");
         setLoading(false);
       }
+    } 
+      else{
+        const data = await getUnsubedEvents();
+        if (data.unsubscribed_events != null) {
+          setEvents(data.unsubscribed_events);
+          setLoading(false);
+        } else {
+          setError("Failed to fetch events. Please try again later.");
+          setLoading(false);
+        }
+
+
+      }
+      
     };
 
     fetchEvents();
   }, []);
 
+  const categories = events.map(event => event.type);
+  categories.unshift("All");
   const filteredEvents =
     selectedCategory === "All"
       ? events
@@ -55,10 +95,37 @@ export const HeroPage = ({ events, setEvents }) => {
       </div>
 
       <Stats />
-      <CategoryFilter
-        selectedCategory={selectedCategory}
-        onCategorySelect={handleCategorySelect}
-      />
+
+      {/* Centering the Category Filter */}
+      <div className="flex justify-center mt-6">
+        <CategoryFilter
+        categories={categories}
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategorySelect}
+        />
+      </div>
+
+      <div className="text-center mt-6">
+        <button
+          className="px-6 py-3 bg-purple-600 text-white rounded-full font-semibold hover:bg-purple-700"
+          onClick={() => handleSubscribe(selectedCategory)}
+        >
+          Subscribe to {selectedCategory} Mailing List
+        </button>
+      </div>
+
+      {/* Styled Message */}
+      {message && (
+        <div
+          className={`mt-4 py-2 px-4 rounded-lg text-center ${
+            messageType == "success"
+              ? "bg-purple-100 text-green-800 border"
+              : "bg-purple-100 text-red-800 border"
+          } transition-all`}
+        >
+          {message}
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-12">
@@ -68,10 +135,12 @@ export const HeroPage = ({ events, setEvents }) => {
         <div className="text-center py-12 text-red-600">{error}</div>
       ) : (
         events && (
-          <EventList
-            events={filteredEvents}
-            onEventSelect={handleEventSelect}
-          />
+          <>
+            <EventList
+              events={filteredEvents}
+              onEventSelect={handleEventSelect}
+            />
+          </>
         )
       )}
 

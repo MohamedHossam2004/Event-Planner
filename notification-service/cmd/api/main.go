@@ -12,10 +12,13 @@ import (
 	"github.com/MohamedHossam2004/Event-Planner/notification-service/internal/mailer"
 	"github.com/go-chi/chi/v5"
 
-	// "github.com/go-chi/chi/v5/middleware"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"time"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 const (
@@ -105,8 +108,9 @@ func (app *application) subscribe(w http.ResponseWriter, r *http.Request) {
 
 	if isSubs {
 		log.Println("Email Already subscribed to Mailing List!")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Email Already subscribed to Mailing List!"))
+		// w.WriteHeader(http.StatusBadRequest)
+		// w.Write([]byte("Email Already subscribed to Mailing List!"))
+		app.badRequestResponse(w,r,fmt.Errorf("Email Already subscribed to Mailing List!"))
 		return
 
 	}
@@ -120,8 +124,7 @@ func (app *application) subscribe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("Email successfully subscribed to Mailing List!")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Email successfully subscribed to Mailing List!"))
+	app.writeJSON(w,http.StatusOK,envelope{"message":"Email successfully subscribed to Mailing List!"},nil)
 	eventTypeText := "All"
 	if eventType != "general" {
 		eventTypeText = eventType
@@ -145,7 +148,11 @@ func (app *application) subscribe(w http.ResponseWriter, r *http.Request) {
 	})
 }
 func (app *application) unsubscribe(w http.ResponseWriter, r *http.Request) {
-	userEmail := r.Header.Get("Email")
+	userEmail, _, _, err := app.extractTokenData(r)
+	if err != nil {
+		app.writeJSON(w, http.StatusUnauthorized, envelope{"error": "Invalid token"}, nil)
+		return
+	}
 	eventType := chi.URLParam(r, "eventType")
 
 	isSubs := app.isSubscribed(eventType, userEmail)
@@ -158,7 +165,7 @@ func (app *application) unsubscribe(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	_, err := mailingList.UpdateOne(
+	_, err = mailingList.UpdateOne(
 		context.Background(),
 		bson.M{"Event_Type": eventType},
 		bson.M{"$pull": bson.M{"emails": userEmail}},
@@ -491,6 +498,7 @@ func main() {
 	cfg.smtp.username = os.Getenv("MAILHOG_USERNAME")
 	cfg.smtp.password = os.Getenv("MAILHOG_PASSWORD")
 	cfg.smtp.sender = os.Getenv("SENDER_EMAIL")
+	cfg.jwt.secret=os.Getenv("JWT_SECRET")
 
 	if cfg.smtp.host == "" || portStr == "" {
 		log.Fatal("Environment variables for Mailhog are not set")
@@ -512,6 +520,23 @@ func main() {
 	log.Printf("starting user service on %s\n", cfg.port)
 
 	r := chi.NewRouter()
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
+
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(middleware.Heartbeat("/ping"))
+	r.Use(middleware.Throttle(100))
 	connectToDb()
 
 	r.Post("/subscribe/{eventType}", app.subscribe)

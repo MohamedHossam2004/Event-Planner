@@ -1,18 +1,18 @@
-const categories = [
-  "All",
-  "Conference",
-  "Workshop",
-  "Meetup",
-  "Social",
-  "Career Fair",
-  "Graduation",
-  "Other",
-];
+// const categories = [
+//   "All",
+//   "Conference",
+//   "Workshop",
+//   "Meetup",
+//   "Social",
+//   "Career Fair",
+//   "Graduation",
+//   "Other",
+// ];
 
-export const CategoryFilter = ({ selectedCategory, onCategorySelect }) => {
+export const CategoryFilter = ({ selectedCategory, onCategorySelect,categories }) => {
   return (
     <div className="max-w-7xl mx-auto my-8">
-      <h2 className="text-xl font-semibold mb-4 text-purple-700">Categories</h2>
+      <h2 className="text-xl font-semibold mb-4 text-purple-700 text-center">Categories</h2>
       <div className="flex gap-3 flex-wrap">
         {categories.map((category) => (
           <button

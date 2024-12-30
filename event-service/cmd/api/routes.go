@@ -14,13 +14,18 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("PUT /v1/events/{id}", app.updateEventHandler)                    // PUT /events/{id}
 	mux.HandleFunc("DELETE /v1/events/{id}", app.deleteEventHandler)                 // DELETE /events/{id}
 	mux.HandleFunc("POST /v1/events/{id}/apply", app.applyToEventHandler)            // POST /events/{id}/apply
-	mux.HandleFunc("DELETE /v1/events/{id}/unapply", app.removeUserEventApplication) // DELETE /events/{id}/unapply
+	mux.HandleFunc("DELETE /v1/events/{id}/unapply", app.removeUserEventApplication)
+	mux.HandleFunc("GET /v1/events/user", app.viewUnsubscribedEventsHandler)
+	
+
 
 	mux.HandleFunc("GET /v1/eventApps/", app.getAllEventAppsHandler)       // GET /eventApps
 	mux.HandleFunc("GET /v1/eventApps/{id}", app.getEventAppByIDHandler)   // GET /eventApps/{id}
 	mux.HandleFunc("POST /v1/eventApps", app.createEventAppHandler)       // POST /eventApps
 	mux.HandleFunc("DELETE /v1/eventApps/{id}", app.deleteEventAppHandler) // DELETE /eventApps/{id}
-	mux.HandleFunc("GET /v1/eventApps/user", app.viewAppliedEventsHandler) //GET /eventApps/user
+	mux.HandleFunc("GET /v1/eventApps/user", app.viewAppliedEventsHandler)
+	
+	//GET /eventApps/user
 
 	// Routes
 	// r.Route("/v1/events", func(r chi.Router) {

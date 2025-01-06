@@ -9,14 +9,20 @@
 //   "Other",
 // ];
 
-export const CategoryFilter = ({ selectedCategory, onCategorySelect,categories }) => {
+export const CategoryFilter = ({
+  selectedCategory,
+  onCategorySelect,
+  categories,
+}) => {
   return (
     <div className="max-w-7xl mx-auto my-8">
-      <h2 className="text-xl font-semibold mb-4 text-purple-700 text-center">Categories</h2>
+      <h2 className="text-xl font-semibold mb-4 text-purple-700 text-center">
+        Categories
+      </h2>
       <div className="flex gap-3 flex-wrap">
-        {categories.map((category) => (
+        {categories.map((category, index) => (
           <button
-            key={category}
+            key={`${category}-${index}`} // Add index to ensure uniqueness
             onClick={() => onCategorySelect(category)}
             className={`px-4 py-2 rounded-full ${
               category === selectedCategory

@@ -1,10 +1,10 @@
-import { useState, useEffect,useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Stats } from "../components/Stats";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { EventList } from "../components/EventList";
 import { EventOverlay } from "../components/EventOverlay";
 import { getEvents, getUnsubedEvents } from "../services/api";
-import { subscribeMailingList} from "../services/api";
+import { subscribeMailingList } from "../services/api";
 import { AuthContext } from "../contexts/AuthContext";
 
 export const HeroPage = ({ events, setEvents }) => {
@@ -37,28 +37,24 @@ export const HeroPage = ({ events, setEvents }) => {
       setMessage(response.message);
       setMessageType("success"); // Set message type as success
     } catch (error) {
-      setMessage(error.response.message)
+      setMessage(error.response.message);
       setMessageType("error"); // Set message type as error
     }
   };
 
   useEffect(() => {
     const fetchEvents = async () => {
-
-      
-
       //console.log(user.isAdmin)
-      if(user&&user.isAdmin){
-       const data = await getEvents();
-      if (data.events != null) {
-        setEvents(data.events);
-        setLoading(false);
+      if ((user && user.isAdmin) || !user) {
+        const data = await getEvents();
+        if (data.events != null) {
+          setEvents(data.events);
+          setLoading(false);
+        } else {
+          setError("Failed to fetch events. Please try again later.");
+          setLoading(false);
+        }
       } else {
-        setError("Failed to fetch events. Please try again later.");
-        setLoading(false);
-      }
-    } 
-      else{
         const data = await getUnsubedEvents();
         if (data.unsubscribed_events != null) {
           setEvents(data.unsubscribed_events);
@@ -67,17 +63,16 @@ export const HeroPage = ({ events, setEvents }) => {
           setError("Failed to fetch events. Please try again later.");
           setLoading(false);
         }
-
-
       }
-      
     };
 
     fetchEvents();
-  }, []);
+  }, [user]);
 
-  const categories = events.map(event => event.type);
-  categories.unshift("All");
+  const uniqueCategories = [
+    "All",
+    ...Array.from(new Set(events.map((event) => event.type))),
+  ];
   const filteredEvents =
     selectedCategory === "All"
       ? events
@@ -99,7 +94,7 @@ export const HeroPage = ({ events, setEvents }) => {
       {/* Centering the Category Filter */}
       <div className="flex justify-center mt-6">
         <CategoryFilter
-        categories={categories}
+          categories={uniqueCategories}
           selectedCategory={selectedCategory}
           onCategorySelect={handleCategorySelect}
         />

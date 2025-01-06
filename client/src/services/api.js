@@ -63,7 +63,6 @@ export const decodeToken = (token) => {
   }
 };
 
-// Existing getEvents function
 export const getEvents = async () => {
   try {
     const response = await axios.get(`${API_URL}/events`);
@@ -77,7 +76,7 @@ export const getEvents = async () => {
 export const getEventsForUser = async()=>{
   try{
 
-    const response = await axios.get(`${API_URL}/events/user`,{
+    const response = await axios.get(`${API_URL}/eventapps/user`,{
          headers: { Authorization: `Bearer ${getCookie('token')}` }
        });
        return response;
@@ -118,4 +117,55 @@ export const getEventAppsForAdmin = async () => {
   catch (error) {
     throw new Error(error.response?.data?.message || 'Failed to fetch event applications for admin');
   }
+}
+
+export const unsubFromEvent = async(id)=>{
+  try {
+    const response = await axios.delete(`${API_URL}/events/${id}/unapply`, {
+      headers: { Authorization: `Bearer ${getCookie('token')}` }
+    });
+    return {
+      message:"Successfully unsubscribed from event "
+    };
+  }
+
+  catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to unsubscribe from event');
+  }
+
+
+
+}
+
+export const subscribeMailingList = async(eventType)=>{
+  try {
+    const response = await axios.post(`${API_URL}/subscribe/${eventType}`,{}, {
+      headers: { Authorization: `Bearer ${getCookie('token')}` }
+    });
+    return {"message":
+      response.data.message
+    }
+  }
+
+  catch (error) {
+    return{
+      "message":error.response.data.error
+    } 
+  }
+
+
+
+}
+
+export const getUnsubedEvents=async()=>{
+  try {
+    const response = await axios.get(`${API_URL}/events/user`,{
+      headers: { Authorization: `Bearer ${getCookie('token')}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.log(error)
+    throw new Error(error.response?.data?.message || 'Failed to fetch events');
+  }
+
 }

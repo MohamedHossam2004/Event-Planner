@@ -472,4 +472,38 @@ func (app *application) viewAppliedEventsHandler(w http.ResponseWriter, r *http.
 	}
 
 	app.handleResponseStatus(w, r, response.StatusCode, payload)
+
+}
+
+func (app *application) viewUnsubedEventsHandler(w http.ResponseWriter, r *http.Request) {
+	request, err := http.NewRequest("GET", "http://event-service/v1/events/user", nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	request.Header = r.Header
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	defer response.Body.Close()
+
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(responseBody, &payload); err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	app.handleResponseStatus(w, r, response.StatusCode, payload)
+		
 }

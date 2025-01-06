@@ -2,16 +2,18 @@ import { useState } from "react";
 import { X, Calendar, Clock, MapPin, Users } from "lucide-react";
 import { formatDate, formatTime } from "../services/helpers";
 import { applyToEvent } from "../services/api";
+import { useContext } from "react";
+import { AuthContext } from "../contexts/AuthContext";
 
 export const EventOverlay = ({ event, onClose }) => {
-  const [errorMessage, setErrorMessage] = useState("");
-
+  const { showMessage } = useContext(AuthContext);
   const onRegisterClick = async (eventId) => {
     try {
-      setErrorMessage("");
       const result = await applyToEvent(eventId);
+      showMessage("Successfully registered for the event!", "success");
+      onClose();
     } catch (error) {
-      setErrorMessage(error.message);
+      showMessage(error.message || "Failed to register for event", "error");
     }
   };
 
@@ -34,10 +36,6 @@ export const EventOverlay = ({ event, onClose }) => {
         </button>
 
         <div className="flex flex-col">
-          {errorMessage && (
-            <div className="text-red-600 text-center mb-4">{errorMessage}</div>
-          )}
-          {/* Title */}
           <h2 className="text-3xl font-bold text-gray-800 mb-4">
             {event.name}
           </h2>

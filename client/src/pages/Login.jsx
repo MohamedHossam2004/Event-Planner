@@ -10,21 +10,19 @@ export const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { setUser } = useContext(AuthContext);
+  const { setUser, showMessage } = useContext(AuthContext);
   const [isLoading, setIsLoading] = useState(true);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setEmail("");
-    setPassword("");
     try {
       const response = await login(email, password);
       document.cookie = `token=${response.authentication_token}; path=/; max-age=3600; SameSite=Strict`;
       setUser(response.user);
+      showMessage("Logged in successfully!", "success");
       navigate("/");
     } catch (err) {
-      setError(err.message || "An error occurred during login");
+      showMessage(err.message || "An error occurred during login", "error");
     }
   };
 

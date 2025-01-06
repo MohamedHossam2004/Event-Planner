@@ -9,6 +9,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 //import {RegisterdEvents} from './components/RegisterdEvents'
 import MyEvents from "./components/myevents";
 import EventApplications from "./components/eventApplications";
+import { AlertMessage } from "./components/AlertMessage";
+import { AccountActivation } from "./pages/AccountActivation";
 
 function App() {
   const [showCreateEventOverlay, setShowCreateEventOverlay] = useState(false);
@@ -25,6 +27,7 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="min-h-screen bg-gray-50">
+          <AlertMessage />
           <Header onCreateEvent={handleCreateEvent} setEvents={setEvents} />
 
           <Routes>
@@ -36,6 +39,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/myevents" element={<MyEvents />} />
             <Route path="/eventApplications" element={<EventApplications />} />
+            <Route path="/activate/:token" element={<AccountActivation />} />
           </Routes>
 
           <footer className="bg-white border-t mt-16 py-8">

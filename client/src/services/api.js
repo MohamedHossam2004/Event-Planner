@@ -1,64 +1,72 @@
-import axios from 'axios';
+import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
-const API_URL = 'http://localhost:8080/v1';
+const API_URL = "http://localhost:8080/v1";
 
 export const login = async (email, password) => {
   try {
     const response = await axios.post(`${API_URL}/login`, { email, password });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Login failed');
+    throw new Error(error.response?.data?.message || "Login failed");
   }
 };
 
 export const signup = async (name, email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/register`, { name, email, password });
+    const response = await axios.post(`${API_URL}/register`, {
+      name,
+      email,
+      password,
+    });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Signup failed');
+    throw new Error(error.response?.data?.message || "Signup failed");
   }
 };
 
 export const logout = async () => {
   // Clear the token from cookies
-  document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 };
 
 export const verifyAccount = async () => {
   try {
-    const response = await axios.post(`${API_URL}/v1/verify`, {}, {
-      headers: { Authorization: `Bearer ${getCookie('token')}` }
-    });
+    const response = await axios.post(
+      `${API_URL}/v1/verify`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${getCookie("token")}` },
+      },
+    );
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Verification failed');
+    throw new Error(error.response?.data?.message || "Verification failed");
   }
 };
 
 export const createEvent = async (eventData) => {
   try {
     const response = await axios.post(`${API_URL}/events`, eventData, {
-      headers: { Authorization: `Bearer ${getCookie('token')}` }
+      headers: { Authorization: `Bearer ${getCookie("token")}` },
     });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to create event');
+    throw new Error(error.response?.data?.message || "Failed to create event");
   }
 };
 
 export const getCookie = (name) => {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
+  if (parts.length === 2) return parts.pop().split(";").shift();
 };
 
 export const decodeToken = (token) => {
   try {
     return jwtDecode(token);
   } catch (error) {
-    console.error('Failed to decode token:', error);
+    console.error("Failed to decode token:", error);
     return null;
   }
 };
@@ -68,104 +76,107 @@ export const getEvents = async () => {
     const response = await axios.get(`${API_URL}/events`);
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to fetch events');
+    throw new Error(error.response?.data?.message || "Failed to fetch events");
   }
 };
 
-
-export const getEventsForUser = async()=>{
-  try{
-
-    const response = await axios.get(`${API_URL}/eventapps/user`,{
-         headers: { Authorization: `Bearer ${getCookie('token')}` }
-       });
-       return response;
-
-
+export const getEventsForUser = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/eventapps/user`, {
+      headers: { Authorization: `Bearer ${getCookie("token")}` },
+    });
+    return response;
+  } catch {
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch events for user",
+    );
   }
-  catch{
-
-    throw new Error(error.response?.data?.message || 'Failed to fetch events for user');
-
-  }
-}
-
+};
 
 export const applyToEvent = async (eventId) => {
   try {
-    const token = getCookie('token'); 
-    const response = await axios.post(`${API_URL}/events/${eventId}/apply`, {}, {
-      headers: {
-        Authorization: `Bearer ${token}`, 
+    const token = getCookie("token");
+    const response = await axios.post(
+      `${API_URL}/events/${eventId}/apply`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
     return response.data;
   } catch (error) {
-    console.log(error)
-    throw new Error(error.response?.data?.error || 'Failed to apply to event');
+    console.log(error);
+    throw new Error(error.response?.data?.error || "Failed to apply to event");
   }
 };
 
 export const getEventAppsForAdmin = async () => {
   try {
     const response = await axios.get(`${API_URL}/eventApps`, {
-      headers: { Authorization: `Bearer ${getCookie('token')}` }
+      headers: { Authorization: `Bearer ${getCookie("token")}` },
     });
     return response;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+        "Failed to fetch event applications for admin",
+    );
   }
+};
 
-  catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to fetch event applications for admin');
-  }
-}
-
-export const unsubFromEvent = async(id)=>{
+export const unsubFromEvent = async (id) => {
   try {
     const response = await axios.delete(`${API_URL}/events/${id}/unapply`, {
-      headers: { Authorization: `Bearer ${getCookie('token')}` }
+      headers: { Authorization: `Bearer ${getCookie("token")}` },
     });
     return {
-      message:"Successfully unsubscribed from event "
+      message: "Successfully unsubscribed from event ",
+    };
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message || "Failed to unsubscribe from event",
+    );
+  }
+};
+
+export const subscribeMailingList = async (eventType) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/subscribe/${eventType}`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${getCookie("token")}` },
+      },
+    );
+    return { message: response.data.message };
+  } catch (error) {
+    return {
+      message: error.response.data.error,
     };
   }
+};
 
-  catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to unsubscribe from event');
-  }
-
-
-
-}
-
-export const subscribeMailingList = async(eventType)=>{
+export const getUnsubedEvents = async () => {
   try {
-    const response = await axios.post(`${API_URL}/subscribe/${eventType}`,{}, {
-      headers: { Authorization: `Bearer ${getCookie('token')}` }
-    });
-    return {"message":
-      response.data.message
-    }
-  }
-
-  catch (error) {
-    return{
-      "message":error.response.data.error
-    } 
-  }
-
-
-
-}
-
-export const getUnsubedEvents=async()=>{
-  try {
-    const response = await axios.get(`${API_URL}/events/user`,{
-      headers: { Authorization: `Bearer ${getCookie('token')}` }
+    const response = await axios.get(`${API_URL}/events/user`, {
+      headers: { Authorization: `Bearer ${getCookie("token")}` },
     });
     return response.data;
   } catch (error) {
-    console.log(error)
-    throw new Error(error.response?.data?.message || 'Failed to fetch events');
+    console.log(error);
+    throw new Error(error.response?.data?.message || "Failed to fetch events");
   }
+};
 
-}
+export const activateAccount = async (token) => {
+  try {
+    const response = await axios.post(`${API_URL}/activate/${token}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message || "Account activation failed",
+    );
+  }
+};

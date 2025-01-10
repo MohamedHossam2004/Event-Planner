@@ -1,27 +1,26 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Search, CalendarPlus } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
 import { logout } from "../services/api";
 
 export const Header = ({ onCreateEvent, setEvents }) => {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, updateUser, showMessage } = useContext(AuthContext);
   const navigate = useNavigate();
   const link = user && user.isAdmin ? "/eventApplications" : "/myevents";
-  const [username, setUsername] = useState(null);
 
   const handleLogout = async () => {
-    await logout();
-    setUser(null);
-    setUsername(null);
-    navigate("/");
-  };
-
-  useEffect(() => {
-    if (user) {
-      setUsername(user.name);
+    try {
+      await logout();
+      document.cookie =
+        "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      updateUser(null);
+      showMessage("Logged out successfully!", "success");
+      navigate("/");
+    } catch (error) {
+      showMessage("Error logging out", "error");
     }
-  }, [user]);
+  };
 
   return (
     <header className="bg-gradient-to-r from-purple-600 to-blue-600 p-4">
@@ -45,11 +44,11 @@ export const Header = ({ onCreateEvent, setEvents }) => {
         </div>
 
         <nav className="flex items-center space-x-4">
-          {username ? (
+          {user ? (
             <>
-              <a className="text-white" href={link}>
-                Welcome, {username}
-              </a>
+              <Link to={link} className="text-white">
+                Welcome, {user.name}
+              </Link>
 
               <button
                 onClick={handleLogout}

@@ -1,11 +1,10 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useCallback } from "react";
 import { getCookie, decodeToken } from "../services/api";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    // Initialize user state from token in cookies
     const token = getCookie("token");
     if (token) {
       const decodedToken = decodeToken(token);
@@ -21,10 +20,8 @@ export const AuthProvider = ({ children }) => {
   });
   const [message, setMessage] = useState(null);
 
-  // Optional: Refresh token check
-  useEffect(() => {
-    const token = getCookie("token");
-    if (!user && token) {
+  const updateUser = useCallback((token) => {
+    if (token) {
       const decodedToken = decodeToken(token);
       if (decodedToken) {
         setUser({
@@ -33,16 +30,25 @@ export const AuthProvider = ({ children }) => {
           isActive: decodedToken.isActivated,
         });
       }
+    } else {
+      setUser(null);
     }
   }, []);
 
-  const showMessage = (text, type) => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage(null), 5000);
-  };
+  const showMessage = useCallback((text, type) => {
+    // First clear any existing message
+    setMessage(null);
+
+    // Set new message after a brief delay
+    setTimeout(() => {
+      setMessage({ text, type });
+    }, 100);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, message, showMessage }}>
+    <AuthContext.Provider
+      value={{ user, setUser, updateUser, message, setMessage, showMessage }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -8,7 +8,9 @@ export const login = async (email, password) => {
     const response = await axios.post(`${API_URL}/login`, { email, password });
     return response.data;
   } catch (error) {
-    throw new Error(error.response?.data?.message || "Login failed");
+    const message =
+      error.response?.data?.error.password || error.response?.data?.error;
+    throw new Error(message || "Login failed");
   }
 };
 

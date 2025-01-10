@@ -10,15 +10,16 @@ export const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { setUser, showMessage } = useContext(AuthContext);
+  const { updateUser, showMessage } = useContext(AuthContext);
   const [isLoading, setIsLoading] = useState(true);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await login(email, password);
-      document.cookie = `token=${response.authentication_token}; path=/; max-age=3600; SameSite=Strict`;
-      setUser(response.user);
+      const token = response.authentication_token;
+      document.cookie = `token=${token}; path=/; max-age=3600; SameSite=Strict`;
+      updateUser(token); // Use updateUser instead of setUser
       showMessage("Logged in successfully!", "success");
       navigate("/");
     } catch (err) {
@@ -30,6 +31,7 @@ export const Login = () => {
     setIsLoading(true);
     const token = getCookie("token");
     if (token) {
+      updateUser(token);
       setIsLoading(false);
       navigate("/");
     }

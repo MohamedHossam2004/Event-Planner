@@ -58,6 +58,37 @@ export const createEvent = async (eventData) => {
   }
 };
 
+export const updateEvent = async (eventId, eventData) => {
+  try {
+    const response = await axios.put(`${API_URL}/events/${eventId}`, eventData, {
+      headers: { Authorization: `Bearer ${getCookie("token")}` },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to update event");
+  }
+};
+
+export const deleteEvent = async (eventId) => {
+  try {
+    const response = await axios.delete(`${API_URL}/events/${eventId}`, {
+      headers: { Authorization: `Bearer ${getCookie("token")}` },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to delete event");
+  }
+};
+
+export const getEventById = async (eventId) => {
+  try {
+    const response = await axios.get(`${API_URL}/events/${eventId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || "Failed to fetch event");
+  }
+};
+
 export const getCookie = (name) => {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);

@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { X, Calendar, Clock, MapPin, Users } from "lucide-react";
 import { formatDate, formatTime } from "../services/helpers";
-import { applyToEvent, updateEvent, deleteEvent, getEventById } from "../services/api";
+import {
+  applyToEvent,
+  updateEvent,
+  deleteEvent,
+  getEventById,
+} from "../services/api";
 import { useContext } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 
@@ -9,23 +14,23 @@ export const EventOverlay = ({ event, onClose }) => {
   const { user } = useContext(AuthContext);
   const { showMessage } = useContext(AuthContext);
   const [isUpdateOverlayOpen, setUpdateOverlayOpen] = useState(false);
-  const [existingEventData, setExistingEventData] = useState({
-    name: "",
-    type: "Conference",
-    date: "",
-    description: "",
-    location: {
-      address: "",
-      city: "",
-      state: "",
-      country: "",
-    },
-    organizers: [{ name: "" }],
-    min_capacity: 0,
-    max_capacity: 0,
-    status: "",
-    ushers: [],
-  });
+  // const [existingEventData, setExistingEventData] = useState({
+  //   name: "",
+  //   type: "Conference",
+  //   date: "",
+  //   description: "",
+  //   location: {
+  //     address: "",
+  //     city: "",
+  //     state: "",
+  //     country: "",
+  //   },
+  //   organizers: [{ name: "" }],
+  //   min_capacity: 0,
+  //   max_capacity: 0,
+  //   status: "",
+  //   ushers: [],
+  // });
   const [updatedEventData, setUpdatedEventData] = useState({
     name: "",
     type: "Conference",
@@ -55,11 +60,23 @@ export const EventOverlay = ({ event, onClose }) => {
       setUpdatedEventData((prev) => ({ ...prev, [name]: value }));
     }
   };
-  
+
   const onUpdateClick = async (eventId) => {
-      setUpdateOverlayOpen(true);
-      const existingEvent = await handleGetEventById(eventId);
-      setExistingEventData(existingEvent);
+    setUpdateOverlayOpen(true);
+    // Initialize the form with current event data
+    setUpdatedEventData({
+      name: event.name,
+      type: event.type,
+      date: new Date(event.date).toISOString().slice(0, 16), // Format for datetime-local input
+      location: {
+        address: event.location.address,
+        city: event.location.city,
+        state: event.location.state,
+        country: event.location.country,
+      },
+      min_capacity: event.min_capacity,
+      max_capacity: event.max_capacity,
+    });
   };
 
   const handleGetEventById = async (eventId) => {
@@ -70,34 +87,51 @@ export const EventOverlay = ({ event, onClose }) => {
       throw new Error(error.response?.data?.message || "Failed to fetch event");
     }
   };
-  
+
   const handleUpdateSubmit = async (eventId) => {
     try {
-      console.log(existingEventData);
       const {
         number_of_applications,
         description,
         organizers,
         status,
         ushers,
-      } = existingEventData.event;
+      } = event;
 
-      const formattedDate = new Date(updatedEventData.date).toISOString();
-  
-      setUpdatedEventData({
+      // Format the date properly
+      let formattedDate;
+      try {
+        // Check if date is not empty
+        if (updatedEventData.date) {
+          formattedDate = new Date(updatedEventData.date).toISOString();
+        } else {
+          // If no new date is provided, use the original event date
+          formattedDate = new Date(event.date).toISOString();
+        }
+      } catch (error) {
+        showMessage("Invalid date format", "error");
+        return;
+      }
+
+      const dataToUpdate = {
         ...updatedEventData,
         date: formattedDate,
-        min_capacity: Number.parseInt(updatedEventData.min_capacity, 10),
-        max_capacity: Number.parseInt(updatedEventData.max_capacity, 10),
+        min_capacity: Number.parseInt(
+          updatedEventData.min_capacity || event.min_capacity,
+          10,
+        ),
+        max_capacity: Number.parseInt(
+          updatedEventData.max_capacity || event.max_capacity,
+          10,
+        ),
         number_of_applications,
         description,
         organizers,
         status,
         ushers,
-      });
-  
-      console.log(updatedEventData);
-      const result = await updateEvent(eventId, updatedEventData);
+      };
+
+      const result = await updateEvent(eventId, dataToUpdate);
       setUpdateOverlayOpen(false);
       showMessage("Event updated successfully!", "success");
       onClose();
@@ -105,20 +139,7 @@ export const EventOverlay = ({ event, onClose }) => {
       showMessage(error.message || "Failed to update event", "error");
     }
   };
-  
-  const onDeleteClick = async (eventId) => {
-      const confirmDelete = window.confirm("Are you sure you want to delete this event?");
-      if (confirmDelete) {
-          try {
-            const result = await deleteEvent(eventId);
-            showMessage("Event deleted successfully!", "success");
-            onClose();
-          } catch (error) {
-            showMessage(error.message || "Failed to delete event", "error");
-          }
-      }
-  };
-  
+
   const onRegisterClick = async (eventId) => {
     try {
       const result = await applyToEvent(eventId);
@@ -137,14 +158,16 @@ export const EventOverlay = ({ event, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-            {isUpdateOverlayOpen && (
+      {isUpdateOverlayOpen && (
         <div className="overlay">
           <div className="overlay-content p-6 bg-white rounded-lg shadow-lg max-w-md mx-auto">
             <h2 className="text-xl font-semibold mb-4">Update Event</h2>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              handleUpdateSubmit(event._id);
-            }}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdateSubmit(event._id);
+              }}
+            >
               <label className="block mb-2">
                 Date:
                 <input
@@ -324,23 +347,23 @@ export const EventOverlay = ({ event, onClose }) => {
               </div>
 
               {/* Action Buttons */}
-              { user.isAdmin ? (
-                  <div className="space-y-3">
-                      <button
-                        className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
-                        onClick={() => onUpdateClick(event._id)}
-                      >
-                        Update Event
-                      </button>
-                      <button
-                        className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
-                        onClick={() => onDeleteClick(event._id)}
-                      >
-                        Delete Event
-                      </button>
-                  </div>
+              {user?.isAdmin ? (
+                <div className="space-y-3">
+                  <button
+                    className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                    onClick={() => onUpdateClick(event._id)}
+                  >
+                    Update Event
+                  </button>
+                  <button
+                    className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                    onClick={() => onDeleteClick(event._id)}
+                  >
+                    Delete Event
+                  </button>
+                </div>
               ) : (
-                  <div className="space-y-3">
+                <div className="space-y-3">
                   <button
                     className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium event-register"
                     onClick={() => onRegisterClick(event._id)}
@@ -350,8 +373,8 @@ export const EventOverlay = ({ event, onClose }) => {
                   <button className="w-full py-3 px-4 bg-white text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-medium">
                     Apply as Usher
                   </button>
-                  </div>
-              ) }
+                </div>
+              )}
             </div>
           </div>
         </div>
